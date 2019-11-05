@@ -4,7 +4,7 @@ import torch.nn as nn
 
 def conv3x3(in_channels, out_channels):
     """3x3 convolution with padding"""
-    return nn.Conv2d(in_channels, out_channels, kernel_size=3)
+    return nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
 
 
 def conv1x1(in_channels, out_channels):
@@ -42,7 +42,7 @@ class Network(nn.Module):
 
     def __init__(self, board_size, in_channels, residual_channels, residual_layers):
         super(Network, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, residual_channels, 3)
+        self.conv1 = conv3x3(in_channels, residual_channels)
         self.residual_tower = nn.Sequential(
             *[ResBlock(residual_channels, residual_channels) for _ in range(residual_layers)])
         self.policy_conv = conv1x1(residual_channels, 2)
@@ -76,7 +76,7 @@ class Network(nn.Module):
 
         # policy head
         pol = self.policy_conv(x)
-        pol = self.policy_fc(torch.flatten(x, start_dim=1))
+        pol = self.policy_fc(torch.flatten(pol, start_dim=1))
 
         # value head
         val = self.value_conv(x)
