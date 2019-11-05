@@ -1,4 +1,4 @@
-name: Test Yureka-go
+name: Test
 
 on: [push]
 
