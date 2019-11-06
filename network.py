@@ -42,7 +42,9 @@ class Network(nn.Module):
 
     def __init__(self, board_size, in_channels, residual_channels, residual_layers):
         super(Network, self).__init__()
-        self.conv1 = conv3x3(in_channels, residual_channels)
+        self.conv_input = conv3x3(in_channels, residual_channels)
+        self.bn_input = nn.BatchNorm2d(residual_channels)
+        self.relu_input = nn.ReLU(inplace=True)
         self.residual_tower = nn.Sequential(
             *[ResBlock(residual_channels, residual_channels) for _ in range(residual_layers)])
         self.policy_conv = conv1x1(residual_channels, 2)
@@ -69,7 +71,9 @@ class Network(nn.Module):
 
     def forward(self, x):
         # first conv layer
-        x = self.conv1(x)
+        x = self.conv_input(x)
+        x = self.bn_input(x)
+        x = self.relu_input(x)
 
         # residual tower
         x = self.residual_tower(x)
