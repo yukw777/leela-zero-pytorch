@@ -19,17 +19,17 @@ class ConvBlock(nn.Module):
             padding=1 if kernel_size == 3 else 0,
             bias=False
         )
-        self.bn = nn.BatchNorm2d(out_channels)
+        self.bn = nn.BatchNorm2d(out_channels, affine=False)
+        self.beta = nn.Parameter(torch.zeros(out_channels))
         self.relu = nn.ReLU(inplace=True) if relu else None
 
         # initializations
         nn.init.kaiming_normal_(self.conv.weight, mode='fan_out', nonlinearity='relu')
-        nn.init.constant_(self.bn.weight, 1)
-        nn.init.constant_(self.bn.bias, 0)
 
     def forward(self, x):
         x = self.conv(x)
         x = self.bn(x)
+        x += self.beta.view(1, self.bn.num_features, 1, 1).expand_as(x)
         return self.relu(x) if self.relu is not None else x
 
 
@@ -40,11 +40,6 @@ class ResBlock(nn.Module):
         self.conv1 = ConvBlock(in_channels, out_channels, 3)
         self.conv2 = ConvBlock(out_channels, out_channels, 3, relu=False)
         self.relu = nn.ReLU(inplace=True)
-
-        # Zero-initialize the last BN in each residual branch,
-        # so that the residual branch starts with zeros, and each residual block behaves like an identity.
-        # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
-        nn.init.constant_(self.conv2.bn.weight, 0)
 
     def forward(self, x):
         identity = x
