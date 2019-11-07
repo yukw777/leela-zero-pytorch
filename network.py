@@ -5,7 +5,38 @@ import torch.nn.functional as F
 
 class ConvBlock(nn.Module):
     """
-    A convolutional block with a convolution layer, batchnorm and an optional relu
+    A convolutional block with a convolution layer, batchnorm (with beta) and an optional relu
+
+    Note on the bias for the convolutional layer:
+    Leela Zero actually uses the bias for the convolutional layer as to encode the learnable parameters of the
+    following batch norm layer. This was done so that the format of the weights file didn't have to change when
+    these learnable parameters were added.
+
+    Currently, Leela Zero only uses the `beta` (`bias` in PyTorch) term of batch norm. In Tensorflow, you can tell
+    batch norm to ignore gamma by calling tf.layers.batch_normalization(scale=False). So how do you actually use
+    the convolutional bias to produce the same results as applying the `beta` term in batch norm? Let's first take
+    a look at the equation for batch norm:
+
+    y = gamma * (x - mean)/sqrt(var - eps) + beta
+
+    For Leela Zero, gamma is ignored, so the equation becomes:
+
+    y = (x - mean)/sqrt(var - eps) + beta
+
+    Now, let `x_conv` be the output of a convolution layer w/out the bias. Then, we want to add some bias to
+    `x_conv`, run it through batch norm without `beta`, and make sure the result is the same as running `x_conv`
+    through the batch norm equation with `beta` above. In an equation form:
+
+    (x_conv + bias - mean)/sqrt(var - eps) = (x_conv - mean)/sqrt(var - eps) + beta
+    x_conv + bias - mean = x_conv - mean + beta * sqrt(var - eps)
+    bias = beta * sqrt(var - eps)
+
+    So if we set the convolutional bias to `beta * sqrt(var - eps)`, we get the desired output, and this is what
+    LeelaZero does.
+
+    In PyTorch, you can't set batch normalization layers to ignore only `gamma`, and you can only ignore both
+    `gamma` and `beta`. So, ConvBlock sets batch normalization to ignore both, then simply adds a tensor after,
+    which represents `beta`.
     """
 
     def __init__(self, in_channels, out_channels, kernel_size, relu=True):
@@ -81,3 +112,75 @@ class Network(nn.Module):
         val = torch.tanh(self.value_fc_2(val))
 
         return pol, val
+
+    def to_leela_weights(self, filename):
+        """
+        Save the current weights in the Leela Zero format to the given file name.
+
+        The Leela Zero weights format:
+
+        The residual tower is first, followed by the policy head, and then the value head.
+        All convolution filters are 3x3 except for the ones at the start of the policy and value head,
+        which are 1x1 (as in the paper).
+
+        Convolutional layers have 2 weight rows:
+            1. convolution weights w/ shape [output, input, filter_size, filter_size]
+            2. channel biases
+        Batchnorm layers have 2 weight rows:
+            1. batchnorm means
+            2. batchnorm variances
+        Innerproduct (fully connected) layers have 2 weight rows:
+            1. layer weights w/ shape [output, input]
+            2. output biases
+
+        Therefore, the equation for the number of layers is
+
+        n_layers = 1 (version number) +
+                   2 (input convolution) +
+                   2 (input batch norm) +
+                   n_res (number of residual blocks) *
+                   8 (first conv + first batch norm + second conv + second batch norm) +
+                   2 (policy head convolution) +
+                   2 (policy head batch norm) +
+                   2 (policy head linear) +
+                   2 (value head convolution) +
+                   2 (value head batch norm) +
+                   2 (value head first linear) +
+                   2 (value head second linear)
+        """
+        with open(filename, 'w') as f:
+            # version tag
+            f.write('1\n')
+            for child in self.children():
+                # newline unless last line (single bias)
+                if isinstance(child, ConvBlock):
+                    f.write(self.conv_block_to_leela_weights(child))
+                elif isinstance(child, nn.Linear):
+                    f.write(self.tensor_to_leela_weights(child.weight))
+                    f.write(self.tensor_to_leela_weights(child.bias))
+                elif isinstance(child, nn.Sequential):
+                    # residual tower
+                    for grand_child in child.children():
+                        if isinstance(grand_child, ResBlock):
+                            f.write(self.conv_block_to_leela_weights(grand_child.conv1))
+                            f.write(self.conv_block_to_leela_weights(grand_child.conv2))
+                        else:
+                            err = 'Sequential should only have ResBlocks, but found ' + str(type(grand_child))
+                            raise ValueError(err)
+                else:
+                    raise ValueError('Unknown layer type' + str(type(child)))
+
+    @staticmethod
+    def conv_block_to_leela_weights(conv_block):
+        weights = []
+        weights.append(Network.tensor_to_leela_weights(conv_block.conv.weight))
+        # calculate beta * sqrt(var - eps)
+        bias = conv_block.beta * torch.sqrt(conv_block.bn.running_var - conv_block.bn.eps)
+        weights.append(Network.tensor_to_leela_weights(bias))
+        weights.append(Network.tensor_to_leela_weights(conv_block.bn.running_mean))
+        weights.append(Network.tensor_to_leela_weights(conv_block.bn.running_var))
+        return ''.join(weights)
+
+    @staticmethod
+    def tensor_to_leela_weights(t):
+        return " ".join([str(w) for w in t.detach().numpy().ravel()]) + '\n'
