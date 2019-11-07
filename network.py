@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class ConvBlock(nn.Module):
@@ -21,7 +22,7 @@ class ConvBlock(nn.Module):
         )
         self.bn = nn.BatchNorm2d(out_channels, affine=False)
         self.beta = nn.Parameter(torch.zeros(out_channels))
-        self.relu = nn.ReLU(inplace=True) if relu else None
+        self.relu = relu
 
         # initializations
         nn.init.kaiming_normal_(self.conv.weight, mode='fan_out', nonlinearity='relu')
@@ -30,7 +31,7 @@ class ConvBlock(nn.Module):
         x = self.conv(x)
         x = self.bn(x)
         x += self.beta.view(1, self.bn.num_features, 1, 1).expand_as(x)
-        return self.relu(x) if self.relu is not None else x
+        return F.relu(x, inplace=True) if self.relu else x
 
 
 class ResBlock(nn.Module):
@@ -39,7 +40,6 @@ class ResBlock(nn.Module):
         super(ResBlock, self).__init__()
         self.conv1 = ConvBlock(in_channels, out_channels, 3)
         self.conv2 = ConvBlock(out_channels, out_channels, 3, relu=False)
-        self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
         identity = x
@@ -48,9 +48,7 @@ class ResBlock(nn.Module):
         out = self.conv2(out)
 
         out += identity
-        out = self.relu(out)
-
-        return out
+        return F.relu(out, inplace=True)
 
 
 class Network(nn.Module):
@@ -63,12 +61,8 @@ class Network(nn.Module):
         self.policy_conv = ConvBlock(residual_channels, 2, 1)
         self.policy_fc = nn.Linear(2 * board_size * board_size, board_size * board_size + 1)
         self.value_conv = ConvBlock(residual_channels, 1, 1)
-        self.value_fc = nn.Sequential(
-            nn.Linear(board_size * board_size, 256),
-            nn.ReLU(inplace=True),
-            nn.Linear(256, 1),
-            nn.Tanh(),
-        )
+        self.value_fc_1 = nn.Linear(board_size * board_size, 256)
+        self.value_fc_2 = nn.Linear(256, 1)
 
     def forward(self, x):
         # first conv layer
@@ -83,6 +77,7 @@ class Network(nn.Module):
 
         # value head
         val = self.value_conv(x)
-        val = self.value_fc(torch.flatten(val, start_dim=1))
+        val = F.relu(self.value_fc_1(torch.flatten(val, start_dim=1)), inplace=True)
+        val = torch.tanh(self.value_fc_2(val))
 
         return pol, val
