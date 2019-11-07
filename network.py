@@ -16,7 +16,7 @@ class ConvBlock(nn.Module):
         self.conv = nn.Conv2d(
             in_channels,
             out_channels,
-            kernel_size=kernel_size,
+            kernel_size,
             padding=1 if kernel_size == 3 else 0,
             bias=False
         )
