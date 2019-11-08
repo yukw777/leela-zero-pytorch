@@ -27,7 +27,6 @@ def weight_file():
 
 
 def test_to_leela_weights(weight_file):
-    torch.manual_seed(42)
     n = Network(19, 18, 16, 3)
     _, tmp = tempfile.mkstemp()
     n.to_leela_weights(tmp)
@@ -37,6 +36,8 @@ def test_to_leela_weights(weight_file):
         weightlines = weight_file.readlines()
         assert len(tmplines) == len(weightlines)
         for l1, l2 in zip(tmplines, weightlines):
-            assert l1 == l2
+            t1 = torch.tensor([float(n) for n in l1.split()])
+            t2 = torch.tensor([float(n) for n in l2.split()])
+            assert t1.size() == t2.size()
 
     os.remove(tmp)
