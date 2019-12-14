@@ -21,6 +21,9 @@ jobs:
     - name: Lint with flake8
       run: |
         flake8 . --count --show-source --statistics
+    - name: Lint with mypy
+      run: |
+        mypy yureka-go --ignore-missing-imports --follow-imports=silent --show-column-numbers
     - name: Test with pytest
       run: |
         pytest
