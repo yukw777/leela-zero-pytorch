@@ -3,7 +3,7 @@ import pytest
 import tempfile
 import os
 
-from network import Network
+from yureka_go.network import Network
 
 
 @pytest.mark.parametrize(
