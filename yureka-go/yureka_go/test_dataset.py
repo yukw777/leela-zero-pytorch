@@ -3,7 +3,7 @@ import torch
 
 from typing import List
 
-from yureka_go.dataset import move_plane, stone_plane, parse_file
+from yureka_go.dataset import move_plane, stone_plane, parse_file, get_datapoints
 
 
 @pytest.mark.parametrize(
@@ -61,3 +61,7 @@ def test_parse_file():
         assert input_tensor.size() == (18, 19, 19)
         assert move_probs.size() == (19 * 19 + 1,)
         assert outcome.item() in (1, -1)
+
+
+def test_get_datapoints():
+    assert len(get_datapoints(['test-data/kgs.0.gz'])) == 6366

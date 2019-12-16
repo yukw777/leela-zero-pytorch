@@ -2,6 +2,7 @@ import torch
 import gzip
 
 from typing import Tuple, List, Generator
+from itertools import chain
 
 from flambe.dataset import Dataset
 
@@ -44,11 +45,25 @@ def parse_file(filename: str) -> Generator[DataPoint, None, None]:
                 input_planes = []
 
 
+def get_datapoints(filenames: List[str]) -> List[DataPoint]:
+    return [i for i in chain(*[parse_file(f) for f in filenames])]
+
+
 class GoDataset(Dataset):
 
     def __init__(self, train_files: List[str], val_files: List[str], test_files: List[str]):
-        pass
+        self._train = get_datapoints(train_files)
+        self._val = get_datapoints(val_files)
+        self._test = get_datapoints(test_files)
 
     @property
     def train(self) -> List[DataPoint]:
         return self._train
+
+    @property
+    def val(self) -> List[DataPoint]:
+        return self._val
+
+    @property
+    def test(self) -> List[DataPoint]:
+        return self._test
