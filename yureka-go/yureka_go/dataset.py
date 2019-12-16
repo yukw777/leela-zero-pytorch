@@ -1,3 +1,5 @@
+import logging
+import os
 import torch
 import gzip
 
@@ -5,7 +7,9 @@ from typing import Tuple, List, Generator
 from itertools import chain
 
 from flambe.dataset import Dataset
+from flambe.compile import registrable_factory
 
+logger = logging.getLogger(__name__)
 
 # (input, move probs, game outcome)
 DataPoint = Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
@@ -30,7 +34,8 @@ def move_plane(turn_bytes: bytes) -> List[torch.Tensor]:
 
 def parse_file(filename: str) -> Generator[DataPoint, None, None]:
     input_planes: List[torch.Tensor] = []
-    with gzip.open(filename) as f:
+    logger.info(f'Processing {filename}')
+    with gzip.open(filename) as f:  # type: ignore
         for i, line in enumerate(f):
             remainder = i % 19
             if remainder < 16:
@@ -47,6 +52,10 @@ def parse_file(filename: str) -> Generator[DataPoint, None, None]:
 
 def get_datapoints(filenames: List[str]) -> List[DataPoint]:
     return [i for i in chain(*[parse_file(f) for f in filenames])]
+
+
+def get_file_paths(data_dir_path: str, prefix: str, low: int, high: int) -> List[str]:
+    return [os.path.join(data_dir_path, f'{prefix}.{i}.gz') for i in range(low, high)]
 
 
 class GoDataset(Dataset):
@@ -67,3 +76,12 @@ class GoDataset(Dataset):
     @property
     def test(self) -> List[DataPoint]:
         return self._test
+
+    @registrable_factory
+    @classmethod
+    def from_data_dir(cls, data_dir_path: str, prefix: str,
+                      train_high: int, val_high: int, test_high: int) -> 'GoDataset':
+        train_paths = get_file_paths(data_dir_path, prefix, 0, train_high)
+        val_paths = get_file_paths(data_dir_path, prefix, train_high, val_high)
+        test_paths = get_file_paths(data_dir_path, prefix, val_high, test_high)
+        return cls(train_paths, val_paths, test_paths)
