@@ -1,7 +1,9 @@
 import pytest
 import torch
 
-from yureka_go.dataset import move_plane, stone_plane
+from typing import List
+
+from yureka_go.dataset import move_plane, stone_plane, parse_file
 
 
 @pytest.mark.parametrize(
@@ -46,9 +48,16 @@ def test_stone_plane(hex_bytes: bytes, plane: torch.Tensor):
 @pytest.mark.parametrize(
     'turn_bytes,planes',
     (
-        (b'0', torch.stack([torch.ones(19, 19), torch.zeros(19, 19)])),
-        (b'1', torch.stack([torch.zeros(19, 19), torch.ones(19, 19)])),
+        (b'0', [torch.ones(19, 19), torch.zeros(19, 19)]),
+        (b'1', [torch.zeros(19, 19), torch.ones(19, 19)]),
     )
 )
-def test_move_plane(turn_bytes: bytes, planes: torch.Tensor):
-    assert move_plane(turn_bytes).equal(planes)
+def test_move_plane(turn_bytes: bytes, planes: List[torch.Tensor]):
+    assert all(a.equal(b) for a, b in zip(move_plane(turn_bytes), planes))
+
+
+def test_parse_file():
+    for input_tensor, move_probs, outcome in parse_file('test-data/kgs.0.gz'):
+        assert input_tensor.size() == (18, 19, 19)
+        assert move_probs.size() == (19 * 19 + 1,)
+        assert outcome.item() in (1, -1)
