@@ -1,0 +1,45 @@
+yureka_go: yureka-go
+
+---
+
+!Experiment
+
+resources:
+  train_dir: data/train
+  val_dir: data/val
+  test_dir: data/test
+
+name: yureka-go-train-bg
+
+pipeline:
+
+  dataset: !yureka_go.GoDataset.from_data_dir
+    train_dir: !@ train_dir
+    val_dir: !@ val_dir
+    test_dir: !@ test_dir
+
+  model: !yureka_go.Network
+    board_size: 19
+    in_channels: 18
+    residual_channels: 256
+    residual_layers: 40
+
+  train: !yureka_go.YurekaGoTrainer
+    dataset: !@ dataset
+    model: !@ model
+    train_sampler: !BaseSampler
+      batch_size: 64
+    val_sampler: !@ train[train_sampler]
+    loss_fn: !yureka_go.MSECrossEntropyLoss
+      alpha: 0.01
+    metric_fn: !@ train[loss_fn]
+    optimizer: !torch.Adam
+      params: !@ train[model].trainable_params
+    lower_is_better: true
+    max_steps: 100
+
+  eval: !yureka_go.YurekaGoEvaluator
+    dataset: !@ dataset
+    model: !@ train.model
+    metric_fn: !@ train[loss_fn]
+    eval_sampler: !@ train[train_sampler]

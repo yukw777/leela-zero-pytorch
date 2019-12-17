@@ -1,0 +1,13 @@
+!GCPCluster
+
+name: yureka-go-bg
+factory_type: n1-standard-8
+factories_num: 1
+orchestrator_type: n1-standard-8
+ssh_key: ~/.ssh/id_rsa_no_pass
+ssh_username: peteryu
+service_account_email: flambe@yureka-go.iam.gserviceaccount.com
+service_account_key: ~/.gcp/yureka-go-d82f2cc5b7d5.json
+project_id: yureka-go
+gpu_type: nvidia-tesla-v100
+gpu_count: 1
