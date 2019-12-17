@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import flambe.nn as f_nn
+
 
 class ConvBlock(nn.Module):
     """
@@ -82,7 +84,7 @@ class ResBlock(nn.Module):
         return F.relu(out, inplace=True)
 
 
-class Network(nn.Module):
+class Network(f_nn.Module):
 
     def __init__(self, board_size, in_channels, residual_channels, residual_layers):
         super(Network, self).__init__()
