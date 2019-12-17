@@ -1,9 +1,20 @@
 import torch
+import torch.nn as nn
+import logging
 
 from flambe.learn import Trainer
 
 
+logger = logging.getLogger(__name__)
+
+
 class YurekaGoTrainer(Trainer):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if torch.cuda.device_count() > 1:
+            logger.info(f'{torch.cuda.device_count()} GPUs, using DataParallel')
+            self.model = nn.DataParallel(self.model)
 
     def _aggregate_preds(self, data_iterator):
         pol_preds, val_preds, pol_targets, val_targets = [], [], [], []
