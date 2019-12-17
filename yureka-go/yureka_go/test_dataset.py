@@ -1,9 +1,10 @@
 import pytest
 import torch
+import random
 
 from typing import List
 
-from yureka_go.dataset import move_plane, stone_plane, parse_file, get_datapoints
+from yureka_go.dataset import move_plane, stone_plane, GoDataView
 
 
 @pytest.mark.parametrize(
@@ -56,12 +57,32 @@ def test_move_plane(turn: str, planes: List[torch.Tensor]):
     assert all(a.equal(b) for a, b in zip(move_plane(turn), planes))
 
 
-def test_parse_file():
-    for input_tensor, move_probs, outcome in parse_file('test-data/kgs.0.gz'):
-        assert input_tensor.size() == (18, 19, 19)
-        assert move_probs.size() == (19 * 19 + 1,)
-        assert outcome.item() in (1, -1)
+@pytest.mark.parametrize(
+    'filenames,length',
+    (
+        (['test-data/kgs.0.gz'], 6366),
+        (['test-data/kgs.1.gz'], 6658),
+        (['test-data/kgs.0.gz', 'test-data/kgs.1.gz'], 13024)
+    )
+)
+def test_go_data_view(filenames: List[str], length: int):
+    view = GoDataView(filenames)
+    assert len(view) == length
+    random_idx = random.randrange(0, len(view))
 
+    planes, probs, outcome = view[random_idx]
+    assert planes.size() == (18, 19, 19)
+    assert probs.size() == (19 * 19 + 1,)
+    assert outcome.item() in (-1, 1)
 
-def test_get_datapoints():
-    assert len(get_datapoints(['test-data/kgs.0.gz'])) == 6366
+    # check the cache
+    cached_planes, cached_probs, cached_outcome = view.cache[random_idx]
+    assert cached_planes.equal(planes)
+    assert cached_probs.equal(probs)
+    assert cached_outcome.equal(outcome)
+
+    # retrieve again
+    planes, probs, outcome = view[random_idx]
+    assert cached_planes.equal(planes)
+    assert cached_probs.equal(probs)
+    assert cached_outcome.equal(outcome)

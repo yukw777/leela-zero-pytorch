@@ -4,15 +4,15 @@ import torch
 import numpy as np
 import gzip
 
-from typing import Tuple, List, Generator
-from itertools import chain
+from typing import Tuple, List, Dict
+from itertools import islice
 
 from flambe.dataset import Dataset
 from flambe.compile import registrable_factory
 
 logger = logging.getLogger(__name__)
 
-# (input, move probs, game outcome)
+# (planes, move probs, game outcome)
 DataPoint = Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
 
 
@@ -33,49 +33,69 @@ def move_plane(turn: str) -> List[torch.Tensor]:
     return [zeros, ones]
 
 
-def parse_file(filename: str) -> Generator[DataPoint, None, None]:
+def parse(lines: List[str]) -> DataPoint:
+    assert len(lines) == 19
     input_planes: List[torch.Tensor] = []
-    logger.info(f'Processing {filename}')
-    with gzip.open(filename, 'rt') as f:  # type: ignore
-        for i, line in enumerate(f):
-            remainder = i % 19
-            if remainder < 16:
-                input_planes.append(stone_plane(line.strip()))
-            elif remainder == 16:
-                input_planes.extend(move_plane(line.strip()))
-            elif remainder == 17:
-                move_probs = torch.tensor([float(p) for p in line.split()])
-            else:
-                # remainder == 18
-                yield torch.stack(input_planes), move_probs, torch.tensor(float(line))
-                input_planes = []
-
-
-def get_datapoints(filenames: List[str]) -> List[DataPoint]:
-    return [i for i in chain(*[parse_file(f) for f in filenames])]
+    for i, line in enumerate(lines):
+        if i < 16:
+            input_planes.append(stone_plane(line.strip()))
+        elif i == 16:
+            input_planes.extend(move_plane(line.strip()))
+        elif i == 17:
+            move_probs = torch.tensor([float(p) for p in line.split()])
+        else:
+            outcome = torch.tensor(float(line))
+            # i == 18
+    return torch.stack(input_planes), move_probs, outcome
 
 
 def get_file_paths(data_dir_path: str, prefix: str, low: int, high: int) -> List[str]:
     return [os.path.join(data_dir_path, f'{prefix}.{i}.gz') for i in range(low, high)]
 
 
+class GoDataView():
+
+    def __init__(self, filenames: List[str]):
+        self.filenames = filenames
+        self.raw_datapoints: List[List[str]] = []
+        for fname in filenames:
+            with gzip.open(fname, 'rt') as f:
+                while True:
+                    # read in 19 lines at a time and append
+                    lines = list(islice(f, 19))
+                    if len(lines) != 19:
+                        break
+                    self.raw_datapoints.append(lines)
+        self.cache: Dict[int, DataPoint] = {}
+
+    def __getitem__(self, idx: int) -> DataPoint:
+        if idx in self.cache:
+            return self.cache[idx]
+        parsed = parse(self.raw_datapoints[idx])
+        self.cache[idx] = parsed
+        return parsed
+
+    def __len__(self):
+        return len(self.raw_datapoints)
+
+
 class GoDataset(Dataset):
 
     def __init__(self, train_files: List[str], val_files: List[str], test_files: List[str]):
-        self._train = get_datapoints(train_files)
-        self._val = get_datapoints(val_files)
-        self._test = get_datapoints(test_files)
+        self._train = GoDataView(train_files)
+        self._val = GoDataView(val_files)
+        self._test = GoDataView(test_files)
 
     @property
-    def train(self) -> List[DataPoint]:
+    def train(self) -> GoDataView:
         return self._train
 
     @property
-    def val(self) -> List[DataPoint]:
+    def val(self) -> GoDataView:
         return self._val
 
     @property
-    def test(self) -> List[DataPoint]:
+    def test(self) -> GoDataView:
         return self._test
 
     @registrable_factory
