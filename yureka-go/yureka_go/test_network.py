@@ -16,9 +16,15 @@ from yureka_go.network import Network
 def test_network(board_size, in_channels, residual_channels,
                  residual_layers, input_size, pol_output_size, val_output_size):
     n = Network(board_size, in_channels, residual_channels, residual_layers)
-    pol, val = n(torch.randn(*input_size))
+    (pol, val), (target_pol, target_val) = n(
+        torch.randn(*input_size),
+        torch.randint(19 * 19 + 1, (input_size[0],)),
+        torch.ones((input_size[0],))
+    )
     assert pol.size() == pol_output_size
     assert val.size() == val_output_size
+    assert target_pol.size() == (input_size[0],)
+    assert target_val.size() == (input_size[0],)
 
 
 @pytest.fixture

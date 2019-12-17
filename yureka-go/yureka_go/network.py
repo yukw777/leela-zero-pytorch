@@ -97,9 +97,9 @@ class Network(f_nn.Module):
         self.value_fc_1 = nn.Linear(board_size * board_size, 256)
         self.value_fc_2 = nn.Linear(256, 1)
 
-    def forward(self, x):
+    def forward(self, planes, target_pol, target_val):
         # first conv layer
-        x = self.conv_input(x)
+        x = self.conv_input(planes)
 
         # residual tower
         x = self.residual_tower(x)
@@ -113,7 +113,7 @@ class Network(f_nn.Module):
         val = F.relu(self.value_fc_1(torch.flatten(val, start_dim=1)), inplace=True)
         val = torch.tanh(self.value_fc_2(val))
 
-        return pol, val
+        return (pol, val), (target_pol, target_val)
 
     def to_leela_weights(self, filename):
         """
