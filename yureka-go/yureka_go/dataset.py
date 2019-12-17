@@ -43,7 +43,7 @@ def parse(lines: List[str]) -> DataPoint:
         elif i == 16:
             input_planes.extend(move_plane(line.strip()))
         elif i == 17:
-            move_probs = torch.tensor([float(p) for p in line.split()])
+            move_probs = torch.argmax(torch.tensor([float(p) for p in line.split()]))
         else:
             outcome = torch.tensor(float(line))
             # i == 18

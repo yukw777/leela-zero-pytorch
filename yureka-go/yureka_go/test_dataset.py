@@ -72,7 +72,8 @@ def test_go_data_view(filenames: List[str], length: int):
 
     planes, probs, outcome = view[random_idx]
     assert planes.size() == (18, 19, 19)
-    assert probs.size() == (19 * 19 + 1,)
+    assert probs.item() in list(range(19 * 19 + 1))
+    assert probs.dtype == torch.int64
     assert outcome.item() in (-1, 1)
 
     # check the cache
