@@ -1,4 +1,5 @@
 import logging
+import glob
 import os
 import torch
 import numpy as np
@@ -49,10 +50,6 @@ def parse(lines: List[str]) -> DataPoint:
     return torch.stack(input_planes), move_probs, outcome
 
 
-def get_file_paths(data_dir_path: str, prefix: str, low: int, high: int) -> List[str]:
-    return [os.path.join(data_dir_path, f'{prefix}.{i}.gz') for i in range(low, high)]
-
-
 class GoDataView():
 
     def __init__(self, filenames: List[str]):
@@ -100,9 +97,8 @@ class GoDataset(Dataset):
 
     @registrable_factory
     @classmethod
-    def from_data_dir(cls, data_dir_path: str, prefix: str,
-                      train_high: int, val_high: int, test_high: int) -> 'GoDataset':
-        train_paths = get_file_paths(data_dir_path, prefix, 0, train_high)
-        val_paths = get_file_paths(data_dir_path, prefix, train_high, val_high)
-        test_paths = get_file_paths(data_dir_path, prefix, val_high, test_high)
-        return cls(train_paths, val_paths, test_paths)
+    def from_data_dir(cls, train_dir: str, val_dir: str, test_dir: str) -> 'GoDataset':
+        train_files = glob.glob(os.path.join(train_dir, '*.gz'))
+        val_files = glob.glob(os.path.join(val_dir, '*.gz'))
+        test_files = glob.glob(os.path.join(test_dir, '*.gz'))
+        return cls(train_files, val_files, test_files)
