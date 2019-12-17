@@ -1,6 +1,7 @@
 import logging
 import os
 import torch
+import numpy as np
 import gzip
 
 from typing import Tuple, List, Generator
@@ -15,18 +16,18 @@ logger = logging.getLogger(__name__)
 DataPoint = Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
 
 
-def stone_plane(hex_bytes: bytes) -> torch.Tensor:
-    n = int(hex_bytes, 16)
-    return torch.tensor([n >> i & 1 for i in range(19*19 - 1, -1, -1)]).float().view(19, 19)
+def stone_plane(plane: str) -> torch.Tensor:
+    bits = np.unpackbits(np.array(bytearray.fromhex('0' + plane)))[7:]
+    return torch.tensor(bits).float().view(19, 19)
 
 
-def move_plane(turn_bytes: bytes) -> List[torch.Tensor]:
+def move_plane(turn: str) -> List[torch.Tensor]:
     # 0 = black, 1 = white
     # 17) All 1 if black is to move, 0 otherwise
     # 18) All 1 if white is to move, 0 otherwise
     ones = torch.ones(19, 19)
     zeros = torch.zeros(19, 19)
-    if turn_bytes == b'0':
+    if turn == '0':
         # black's turn to move
         return [ones, zeros]
     return [zeros, ones]
@@ -35,7 +36,7 @@ def move_plane(turn_bytes: bytes) -> List[torch.Tensor]:
 def parse_file(filename: str) -> Generator[DataPoint, None, None]:
     input_planes: List[torch.Tensor] = []
     logger.info(f'Processing {filename}')
-    with gzip.open(filename) as f:  # type: ignore
+    with gzip.open(filename, 'rt') as f:  # type: ignore
         for i, line in enumerate(f):
             remainder = i % 19
             if remainder < 16:
