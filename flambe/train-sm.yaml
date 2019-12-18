@@ -9,7 +9,7 @@ resources:
   val_dir: data/val-sm
   test_dir: data/test-sm
 
-name: yureka-go-train
+name: yureka-go-train-sm
 
 pipeline:
 
@@ -21,8 +21,8 @@ pipeline:
   model: !yureka_go.Network
     board_size: 19
     in_channels: 18
-    residual_channels: 64
-    residual_layers: 6
+    residual_channels: 16
+    residual_layers: 2
 
   train: !yureka_go.YurekaGoTrainer
     dataset: !@ dataset
