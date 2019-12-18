@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import logging
 
+from typing import Tuple
+
 from flambe.learn import Trainer
 
 
@@ -12,9 +14,16 @@ class YurekaGoTrainer(Trainer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.parallel_model = None
         if torch.cuda.device_count() > 1:
             logger.info(f'{torch.cuda.device_count()} GPUs, using DataParallel')
-            self.model = nn.DataParallel(self.model)
+            self.parallel_model = nn.DataParallel(self.model)
+
+    def _compute_loss(self, batch: Tuple[torch.Tensor, ...]) -> torch.Tensor:
+        model = self.parallel_model if self.parallel_model is not None else self.model
+        pred, target = model(*batch)
+        loss = self.loss_fn(pred, target)
+        return loss
 
     def _aggregate_preds(self, data_iterator):
         pol_preds, val_preds, pol_targets, val_targets = [], [], [], []
