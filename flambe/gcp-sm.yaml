@@ -11,3 +11,4 @@ service_account_key: ~/.gcp/flambe-gcp-d59b9aa1c262.json
 project_id: flambe-gcp
 gpu_type: nvidia-tesla-v100
 gpu_count: 1
+disk_type: pd-ssd
