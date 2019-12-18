@@ -5,9 +5,9 @@ yureka_go: yureka-go
 !Experiment
 
 resources:
-  train_dir: data/train
-  val_dir: data/val
-  test_dir: data/test
+  train_dir: data/train-sm
+  val_dir: data/val-sm
+  test_dir: data/test-sm
 
 name: yureka-go-train
 
@@ -21,14 +21,14 @@ pipeline:
   model: !yureka_go.Network
     board_size: 19
     in_channels: 18
-    residual_channels: 128
+    residual_channels: 64
     residual_layers: 6
 
   train: !yureka_go.YurekaGoTrainer
     dataset: !@ dataset
     model: !@ model
     train_sampler: !BaseSampler
-      batch_size: 64
+      batch_size: 16
     val_sampler: !@ train[train_sampler]
     loss_fn: !yureka_go.MSECrossEntropyLoss
       alpha: 0.01
