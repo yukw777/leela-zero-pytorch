@@ -1,13 +1,14 @@
 !GCPCluster
 
 name: yureka-go-bg
-factory_type: n1-highmem-8
+factory_type: n1-highmem-16
 factories_num: 1
 orchestrator_type: n1-standard-4
 ssh_key: ~/.ssh/id_rsa_no_pass
 ssh_username: peteryu
-service_account_email: flambe@yureka-go.iam.gserviceaccount.com
-service_account_key: ~/.gcp/yureka-go-d82f2cc5b7d5.json
-project_id: yureka-go
+service_account_email: flambe@flambe-gcp.iam.gserviceaccount.com
+service_account_key: ~/.gcp/flambe-gcp-d59b9aa1c262.json
+project_id: flambe-gcp
 gpu_type: nvidia-tesla-v100
-gpu_count: 1
+gpu_count: 4
+disk_type: pd-ssd
