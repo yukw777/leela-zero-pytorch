@@ -19,9 +19,11 @@ class YurekaGoTrainer(Trainer):
             logger.info(f'{torch.cuda.device_count()} GPUs, using DataParallel')
             self.parallel_model = nn.DataParallel(self.model)
 
+    def get_model(self):
+        return self.parallel_model if self.parallel_model is not None else self.model
+
     def _compute_loss(self, batch: Tuple[torch.Tensor, ...]) -> torch.Tensor:
-        model = self.parallel_model if self.parallel_model is not None else self.model
-        pred, target = model(*batch)
+        pred, target = self.get_model()(*batch)
         loss = self.loss_fn(pred, target)
         return loss
 
@@ -29,7 +31,7 @@ class YurekaGoTrainer(Trainer):
         pol_preds, val_preds, pol_targets, val_targets = [], [], [], []
         for batch in data_iterator:
             batch = self._batch_to_device(batch)
-            (pred_pol, pred_val), (target_pol, target_val) = self.model(*batch)
+            (pred_pol, pred_val), (target_pol, target_val) = self.get_model()(*batch)
             pol_preds.append(pred_pol.cpu())
             val_preds.append(pred_val.cpu())
             pol_targets.append(target_pol.cpu())
