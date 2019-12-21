@@ -53,7 +53,6 @@ def parse(lines: List[str]) -> DataPoint:
 class GoDataView():
 
     def __init__(self, filenames: List[str]):
-        self.filenames = filenames
         self.raw_datapoints: List[List[str]] = []
         for fname in filenames:
             with gzip.open(fname, 'rt') as f:
