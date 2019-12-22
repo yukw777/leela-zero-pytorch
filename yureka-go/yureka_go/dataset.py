@@ -5,9 +5,8 @@ import torch
 import numpy as np
 import gzip
 
-from typing import Tuple, List
+from typing import Tuple, List, Dict
 from itertools import islice
-from concurrent.futures import ThreadPoolExecutor
 
 from flambe.dataset import Dataset
 from flambe.compile import registrable_factory
@@ -51,27 +50,26 @@ def parse(lines: List[str]) -> DataPoint:
     return torch.stack(input_planes), move_probs, outcome
 
 
-def get_raw_datapoints(filename: str) -> np.ndarray:
-    raw_datapoints = []
-    with gzip.open(filename, 'rt') as f:
-        while True:
-            # read in 19 lines at a time and append
-            lines = list(islice(f, 19))
-            if len(lines) != 19:
-                break
-            raw_datapoints.append(lines)
-    return np.array(raw_datapoints)
-
-
 class GoDataView():
 
     def __init__(self, filenames: List[str]):
-        with ThreadPoolExecutor() as executor:
-            raw_datapoints = [datapoints for datapoints in executor.map(get_raw_datapoints, filenames)]
-        self.raw_datapoints = np.concatenate(raw_datapoints, axis=0)
+        self.raw_datapoints: List[List[str]] = []
+        for fname in filenames:
+            with gzip.open(fname, 'rt') as f:
+                while True:
+                    # read in 19 lines at a time and append
+                    lines = list(islice(f, 19))
+                    if len(lines) != 19:
+                        break
+                    self.raw_datapoints.append(lines)
+        self.cache: Dict[int, DataPoint] = {}
 
     def __getitem__(self, idx: int) -> DataPoint:
-        return parse(self.raw_datapoints[idx])
+        if idx in self.cache:
+            return self.cache[idx]
+        parsed = parse(self.raw_datapoints[idx])
+        self.cache[idx] = parsed
+        return parsed
 
     def __len__(self):
         return len(self.raw_datapoints)

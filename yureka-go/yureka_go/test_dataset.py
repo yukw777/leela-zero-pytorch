@@ -62,7 +62,7 @@ def test_move_plane(turn: str, planes: List[torch.Tensor]):
     (
         (['test-data/kgs.0.gz'], 6366),
         (['test-data/kgs.1.gz'], 6658),
-        (['test-data/kgs.0.gz', 'test-data/kgs.1.gz'], 13024),
+        (['test-data/kgs.0.gz', 'test-data/kgs.1.gz'], 13024)
     )
 )
 def test_go_data_view(filenames: List[str], length: int):
@@ -75,3 +75,15 @@ def test_go_data_view(filenames: List[str], length: int):
     assert probs.item() in list(range(19 * 19 + 1))
     assert probs.dtype == torch.int64
     assert outcome.item() in (-1, 1)
+
+    # check the cache
+    cached_planes, cached_probs, cached_outcome = view.cache[random_idx]
+    assert cached_planes.equal(planes)
+    assert cached_probs.equal(probs)
+    assert cached_outcome.equal(outcome)
+
+    # retrieve again
+    planes, probs, outcome = view[random_idx]
+    assert cached_planes.equal(planes)
+    assert cached_probs.equal(probs)
+    assert cached_outcome.equal(outcome)
