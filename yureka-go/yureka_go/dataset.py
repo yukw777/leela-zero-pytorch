@@ -62,9 +62,9 @@ class GoDataView():
                     else:
                         # i == 18
                         outcomes.append(int(line))
-        self.stone_planes = np.stack(stone_planes)
+        self.stone_planes = np.stack(stone_planes) if len(stone_planes) > 0 else np.empty((0, 19, 19))
         self.move_planes = np.array(move_planes)
-        self.move_probs = np.stack(move_probs)
+        self.move_probs = np.stack(move_probs) if len(move_probs) > 0 else np.empty((0, 19*19+1))
         self.outcomes = np.array(outcomes)
 
     def __getitem__(self, idx: int) -> DataPoint:
