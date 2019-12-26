@@ -4,7 +4,7 @@ import random
 
 from typing import List
 
-from yureka_go.dataset import move_plane, stone_plane, GoDataView, hex_to_ndarray
+from leela_zero_pytorch.dataset import move_plane, stone_plane, GoDataView, hex_to_ndarray
 
 
 @pytest.mark.parametrize(

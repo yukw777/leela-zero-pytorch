@@ -1,7 +1,7 @@
 import argparse
 import torch
 
-from yureka_go import Network
+from leela_zero_pytorch import Network
 
 from flambe.compile import load_state_from_file
 

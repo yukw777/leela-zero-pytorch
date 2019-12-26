@@ -4,7 +4,7 @@ from flambe.logging import log
 from flambe.learn.eval import Evaluator
 
 
-class YurekaGoEvaluator(Evaluator):
+class GoEvaluator(Evaluator):
 
     def run(self, block_name: str = None) -> bool:
         """Run the evaluation.

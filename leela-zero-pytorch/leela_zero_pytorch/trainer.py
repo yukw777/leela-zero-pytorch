@@ -10,7 +10,7 @@ from flambe.learn import Trainer
 logger = logging.getLogger(__name__)
 
 
-class YurekaGoTrainer(Trainer):
+class GoTrainer(Trainer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
