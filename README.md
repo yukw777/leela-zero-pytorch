@@ -1,7 +1,7 @@
-# Yureka-go
-![](https://github.com/yukw777/yureka-go/workflows/Test/badge.svg)
+# Leela Zero Pytorch
+![](https://github.com/yukw777/leela-zero-pytorch/workflows/Test/badge.svg)
 
-Yureka Go engine
+Generating Leela Zero weights via supervised training with PyTorch
 
 # Dataset Generation
 I used the KGS game records: https://u-go.net/gamerecords/
