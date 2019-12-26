@@ -1,4 +1,4 @@
-yureka_go: yureka-go
+leela_zero_pytorch: leela-zero-pytorch
 
 ---
 
@@ -9,16 +9,16 @@ resources:
   val_dir: data/val
   test_dir: data/test
 
-name: yureka-go-train-bg
+name: leela-zero-pytorch-train-bg
 
 pipeline:
 
-  train: !yureka_go.YurekaGoTrainer
-    dataset: !yureka_go.GoDataset.from_data_dir
+  train: !leela_zero_pytorch.GoTrainer
+    dataset: !leela_zero_pytorch.GoDataset.from_data_dir
       train_dir: !@ train_dir
       val_dir: !@ val_dir
       test_dir: !@ test_dir
-    model: !yureka_go.Network
+    model: !leela_zero_pytorch.Network
       board_size: 19
       in_channels: 18
       residual_channels: 128
@@ -27,7 +27,7 @@ pipeline:
       batch_size: 8192
       n_workers: 64
     val_sampler: !@ train[train_sampler]
-    loss_fn: !yureka_go.MSECrossEntropyLoss
+    loss_fn: !leela_zero_pytorch.MSECrossEntropyLoss
       alpha: 1
     metric_fn: !@ train[loss_fn]
     optimizer: !torch.Adam

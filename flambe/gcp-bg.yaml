@@ -1,6 +1,6 @@
 !GCPCluster
 
-name: yureka-go-bg
+name: leela-zero-pytorch-bg
 factory_type: n1-highmem-16
 factories_num: 1
 orchestrator_type: n1-standard-4
