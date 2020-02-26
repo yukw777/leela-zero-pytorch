@@ -3,10 +3,8 @@ import torch.nn.functional as F
 
 from typing import Tuple
 
-from flambe.metric import Metric
 
-
-class MSECrossEntropyLoss(Metric):
+class MSECrossEntropyLoss:
 
     def __init__(self, alpha: float):
         super().__init__()
