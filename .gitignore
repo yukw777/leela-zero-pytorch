@@ -108,3 +108,6 @@ venv.bak/
 
 # data
 data/
+
+# pytorch lightning
+lightning_logs/
