@@ -23,7 +23,7 @@ jobs:
         flake8 . --count --show-source --statistics
     - name: Lint with mypy
       run: |
-        mypy leela-zero-pytorch --ignore-missing-imports --follow-imports=silent --show-column-numbers
+        mypy leela_zero_pytorch --ignore-missing-imports --follow-imports=silent --show-column-numbers
     - name: Test with pytest
       run: |
         pytest
