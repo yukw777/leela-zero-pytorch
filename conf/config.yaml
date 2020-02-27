@@ -1,0 +1,4 @@
+dataset:
+  train_dir: data/train
+  val_dir: data/val
+  test_dir: data/test
