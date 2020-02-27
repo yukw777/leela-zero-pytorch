@@ -1,6 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import pytorch_lightning as pl
+
+from typing import Dict, Tuple
+
+from leela_zero_pytorch.dataset import DataPoint
 
 
 class ConvBlock(nn.Module):
@@ -82,7 +87,7 @@ class ResBlock(nn.Module):
         return F.relu(out, inplace=True)
 
 
-class Network(nn.Module):
+class Network(pl.LightningModule):
 
     def __init__(self, board_size: int, in_channels: int, residual_channels: int, residual_layers: int):
         super(Network, self).__init__()
@@ -112,6 +117,43 @@ class Network(nn.Module):
         val = torch.tanh(self.value_fc_2(val))
 
         return (pol, val), (target_pol, target_val)
+
+    def loss(self, pred: Tuple[torch.Tensor, torch.Tensor],
+             target: Tuple[torch.Tensor, torch.Tensor]) -> torch.Tensor:
+        pred_move, pred_val = pred
+        pred_move = pred_move.squeeze()
+        pred_val = pred_val.squeeze()
+        target_move, target_val = target
+        cross_entropy_loss = F.cross_entropy(pred_move, target_move)
+        mse_loss = F.mse_loss(pred_val, target_val)
+        return self.alpha * mse_loss + cross_entropy_loss
+
+    def training_step(self, batch: DataPoint, batch_idx: int) -> Dict:
+        pred, target = self.forward(*batch)
+        loss = self.loss(pred, target)
+        return {
+            'loss': loss,
+            'log': {'training_loss': loss},
+        }
+
+    def validation_step(self, batch: DataPoint, batch_idx: int) -> Dict:
+        pred, target = self.forward(*batch)
+        return {'val_loss': self.loss(pred, target)}
+
+    def validation_end(self, outputs):
+        val_loss_mean = torch.stack([x['val_loss'] for x in outputs]).mean()
+        return {'log': {'validation_loss': val_loss_mean}}
+
+    def test_step(self, batch: DataPoint, batch_idx: int) -> Dict:
+        pred, target = self.forward(*batch)
+        return {'test_loss': self.loss(pred, target)}
+
+    def test_end(self, outputs):
+        test_loss_mean = torch.stack([x['test_loss'] for x in outputs]).mean()
+        return {'log': {'test_loss': test_loss_mean}}
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters())
 
     def to_leela_weights(self, filename: str):
         """
