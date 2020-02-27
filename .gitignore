@@ -111,3 +111,6 @@ data/
 
 # pytorch lightning
 lightning_logs/
+
+# hydra
+outputs/
