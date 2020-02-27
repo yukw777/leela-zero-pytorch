@@ -39,8 +39,8 @@ class ConvBlock(nn.Module):
     which represents `beta`.
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size, relu=True):
-        super(ConvBlock, self).__init__()
+    def __init__(self, in_channels: int, out_channels: int, kernel_size: int, relu: bool = True):
+        super().__init__()
         # we only support the kernel sizes of 1 and 3
         assert kernel_size in (1, 3)
 
@@ -52,7 +52,7 @@ class ConvBlock(nn.Module):
             bias=False
         )
         self.bn = nn.BatchNorm2d(out_channels, affine=False)
-        self.beta = nn.Parameter(torch.zeros(out_channels))
+        self.beta = nn.Parameter(torch.zeros(out_channels))  # type: ignore
         self.relu = relu
 
         # initializations
@@ -67,8 +67,8 @@ class ConvBlock(nn.Module):
 
 class ResBlock(nn.Module):
 
-    def __init__(self, in_channels, out_channels):
-        super(ResBlock, self).__init__()
+    def __init__(self, in_channels: int, out_channels: int):
+        super().__init__()
         self.conv1 = ConvBlock(in_channels, out_channels, 3)
         self.conv2 = ConvBlock(out_channels, out_channels, 3, relu=False)
 
@@ -84,7 +84,7 @@ class ResBlock(nn.Module):
 
 class Network(nn.Module):
 
-    def __init__(self, board_size, in_channels, residual_channels, residual_layers):
+    def __init__(self, board_size: int, in_channels: int, residual_channels: int, residual_layers: int):
         super(Network, self).__init__()
         self.conv_input = ConvBlock(in_channels, residual_channels, 3)
         self.residual_tower = nn.Sequential(
@@ -113,7 +113,7 @@ class Network(nn.Module):
 
         return (pol, val), (target_pol, target_val)
 
-    def to_leela_weights(self, filename):
+    def to_leela_weights(self, filename: str):
         """
         Save the current weights in the Leela Zero format to the given file name.
 
@@ -171,16 +171,16 @@ class Network(nn.Module):
                     raise ValueError('Unknown layer type' + str(type(child)))
 
     @staticmethod
-    def conv_block_to_leela_weights(conv_block):
+    def conv_block_to_leela_weights(conv_block: ConvBlock) -> str:
         weights = []
         weights.append(Network.tensor_to_leela_weights(conv_block.conv.weight))
         # calculate beta * sqrt(var - eps)
-        bias = conv_block.beta * torch.sqrt(conv_block.bn.running_var - conv_block.bn.eps)
+        bias = conv_block.beta * torch.sqrt(conv_block.bn.running_var - conv_block.bn.eps)  # type: ignore
         weights.append(Network.tensor_to_leela_weights(bias))
-        weights.append(Network.tensor_to_leela_weights(conv_block.bn.running_mean))
-        weights.append(Network.tensor_to_leela_weights(conv_block.bn.running_var))
+        weights.append(Network.tensor_to_leela_weights(conv_block.bn.running_mean))  # type: ignore
+        weights.append(Network.tensor_to_leela_weights(conv_block.bn.running_var))  # type: ignore
         return ''.join(weights)
 
     @staticmethod
-    def tensor_to_leela_weights(t):
+    def tensor_to_leela_weights(t: torch.Tensor) -> str:
         return " ".join([str(w) for w in t.detach().numpy().ravel()]) + '\n'
