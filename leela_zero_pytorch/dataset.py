@@ -59,7 +59,7 @@ def get_data_from_file(fname: str) -> Tuple[List[np.ndarray], List[int], List[np
     return stone_planes, move_planes, move_probs, outcomes
 
 
-class GoDataView():
+class Dataset:
 
     def __init__(self, filenames: List[str]):
         stone_planes: List[np.ndarray] = []
@@ -93,29 +93,6 @@ class GoDataView():
     def __len__(self):
         return len(self.outcomes)
 
-
-class GoDataset:
-
-    def __init__(self, train_files: List[str], val_files: List[str], test_files: List[str]):
-        self._train = GoDataView(train_files)
-        self._val = GoDataView(val_files)
-        self._test = GoDataView(test_files)
-
-    @property
-    def train(self) -> GoDataView:
-        return self._train
-
-    @property
-    def val(self) -> GoDataView:
-        return self._val
-
-    @property
-    def test(self) -> GoDataView:
-        return self._test
-
     @classmethod
-    def from_data_dir(cls, train_dir: str, val_dir: str, test_dir: str) -> 'GoDataset':
-        train_files = glob.glob(os.path.join(train_dir, '*.gz'))
-        val_files = glob.glob(os.path.join(val_dir, '*.gz'))
-        test_files = glob.glob(os.path.join(test_dir, '*.gz'))
-        return cls(train_files, val_files, test_files)
+    def from_data_dir(cls, path: str):
+        return cls(glob.glob(os.path.join(path, '*.gz')))

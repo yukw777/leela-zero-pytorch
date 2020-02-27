@@ -4,7 +4,7 @@ import random
 
 from typing import List
 
-from leela_zero_pytorch.dataset import move_plane, stone_plane, GoDataView, hex_to_ndarray
+from leela_zero_pytorch.dataset import move_plane, stone_plane, Dataset, hex_to_ndarray
 
 
 @pytest.mark.parametrize(
@@ -67,7 +67,7 @@ def test_move_plane(turn: int, planes: List[torch.Tensor]):
     )
 )
 def test_go_data_view(filenames: List[str], length: int):
-    view = GoDataView(filenames)
+    view = Dataset(filenames)
     assert len(view) == length
     random_idx = random.randrange(0, len(view))
 
