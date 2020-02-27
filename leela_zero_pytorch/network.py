@@ -123,7 +123,7 @@ class Network(pl.LightningModule):
         pred_move, pred_val = pred
         target_move, target_val = target
         cross_entropy_loss = F.cross_entropy(pred_move, target_move)
-        mse_loss = F.mse_loss(pred_val, target_val)
+        mse_loss = F.mse_loss(pred_val.squeeze(), target_val)
         return mse_loss + cross_entropy_loss
 
     def training_step(self, batch: DataPoint, batch_idx: int) -> Dict:
