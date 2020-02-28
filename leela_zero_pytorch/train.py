@@ -1,4 +1,5 @@
 import hydra
+import logging
 
 from pytorch_lightning import Trainer
 from torch.utils.data import DataLoader
@@ -7,9 +8,12 @@ from leela_zero_pytorch.network import Network
 from leela_zero_pytorch.dataset import Dataset
 
 
+logger = logging.getLogger(__name__)
+
+
 @hydra.main(config_path='../conf/config.yaml')
 def train(cfg):
-    print(cfg.pretty())
+    logger.info(f'Training with the following config:\n{cfg.pretty()}')
     network = Network(
         cfg.network.board_size,
         cfg.network.in_channels,
