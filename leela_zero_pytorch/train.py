@@ -1,6 +1,7 @@
 import hydra
 import logging
 
+from omegaconf import DictConfig
 from pytorch_lightning import Trainer
 from torch.utils.data import DataLoader
 
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @hydra.main(config_path='conf/config.yaml')
-def main(cfg):
+def main(cfg: DictConfig):
     logger.info(f'Training with the following config:\n{cfg.pretty()}')
     network = Network(
         cfg.network.board_size,
