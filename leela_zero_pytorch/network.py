@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 
-from omegaconf import DictConfig
+from argparse import Namespace
 from typing import Dict, Tuple
 
 from leela_zero_pytorch.dataset import DataPoint
@@ -194,19 +194,14 @@ class Network(nn.Module):
 
 class NetworkLightningModule(pl.LightningModule):
 
-    def __init__(self, board_size: int, in_channels: int, residual_channels: int, residual_layers: int):
+    def __init__(self, hparams: Namespace):
         super().__init__()
-        self.hparams = DictConfig({
-            'board_size': board_size,
-            'in_channels': in_channels,
-            'residual_channels': residual_channels,
-            'residual_layers': residual_layers,
-        })
+        self.hparams = hparams
         self.model = Network(
-            board_size,
-            in_channels,
-            residual_channels,
-            residual_layers,
+            hparams.board_size,
+            hparams.in_channels,
+            hparams.residual_channels,
+            hparams.residual_layers,
         )
 
     def forward(self, planes, target_pol, target_val):

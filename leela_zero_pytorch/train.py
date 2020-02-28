@@ -1,6 +1,7 @@
 import hydra
 import logging
 
+from argparse import Namespace
 from omegaconf import DictConfig
 from pytorch_lightning import Trainer
 from torch.utils.data import DataLoader
@@ -15,12 +16,12 @@ logger = logging.getLogger(__name__)
 @hydra.main(config_path='conf/config.yaml')
 def main(cfg: DictConfig):
     logger.info(f'Training with the following config:\n{cfg.pretty()}')
-    module = NetworkLightningModule(
-        cfg.network.board_size,
-        cfg.network.in_channels,
-        cfg.network.residual_channels,
-        cfg.network.residual_layers,
-    )
+    module = NetworkLightningModule(Namespace(
+        board_size=cfg.network.board_size,
+        in_channels=cfg.network.in_channels,
+        residual_channels=cfg.network.residual_channels,
+        residual_layers=cfg.network.residual_layers,
+    ))
     trainer = Trainer(
         max_epochs=cfg.train.max_epochs,
         gpus=cfg.train.gpus,
