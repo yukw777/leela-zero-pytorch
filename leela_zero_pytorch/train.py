@@ -11,8 +11,8 @@ from leela_zero_pytorch.dataset import Dataset
 logger = logging.getLogger(__name__)
 
 
-@hydra.main(config_path='../conf/config.yaml')
-def train(cfg):
+@hydra.main(config_path='conf/config.yaml')
+def main(cfg):
     logger.info(f'Training with the following config:\n{cfg.pretty()}')
     network = Network(
         cfg.network.board_size,
@@ -45,5 +45,12 @@ def train(cfg):
     )
 
 
+# this function is required to allow automatic detection of the module name when running
+# from a binary script.
+# it should be called from the executable script and not the hydra.main() function directly.
+def entry():
+    main()
+
+
 if __name__ == "__main__":
-    train()
+    main()
