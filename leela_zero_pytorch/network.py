@@ -240,4 +240,6 @@ class NetworkLightningModule(pl.LightningModule):
         return {'log': {'test_loss': test_loss_mean}, 'test_loss': test_loss_mean}
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters())
+        # taken from leela zero
+        # https://github.com/leela-zero/leela-zero/blob/db5569ce8d202f77154f288c21d3f2fa228f9aa3/training/tf/tfprocess.py#L190-L191
+        return torch.optim.SGD(self.parameters(), lr=0.05, momentum=0.9, nesterov=True)
