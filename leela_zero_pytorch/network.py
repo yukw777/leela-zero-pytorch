@@ -140,7 +140,7 @@ class Network(pl.LightningModule):
 
     def validation_end(self, outputs):
         val_loss_mean = torch.stack([x['val_loss'] for x in outputs]).mean()
-        return {'log': {'validation_loss': val_loss_mean}}
+        return {'log': {'validation_loss': val_loss_mean}, 'val_loss': val_loss_mean}
 
     def test_step(self, batch: DataPoint, batch_idx: int) -> Dict:
         pred, target = self.forward(*batch)
@@ -148,7 +148,7 @@ class Network(pl.LightningModule):
 
     def test_end(self, outputs):
         test_loss_mean = torch.stack([x['test_loss'] for x in outputs]).mean()
-        return {'log': {'test_loss': test_loss_mean}}
+        return {'log': {'test_loss': test_loss_mean}, 'test_loss': test_loss_mean}
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters())
