@@ -16,7 +16,10 @@ def train(cfg):
         cfg.network.residual_channels,
         cfg.network.residual_layers,
     )
-    trainer = Trainer(max_epochs=cfg.train.max_epochs)
+    trainer = Trainer(
+        max_epochs=cfg.train.max_epochs,
+        gpus=cfg.train.gpus,
+    )
     trainer.fit(
         network,
         train_dataloader=DataLoader(
