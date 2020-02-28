@@ -14,6 +14,7 @@ setup(
     entry_points={
         'console_scripts': [
             'lzp-train = leela_zero_pytorch.train:entry',
+            'lzp-weights = leela_zero_pytorch.weights:main',
         ],
     },
 )
