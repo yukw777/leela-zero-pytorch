@@ -6,7 +6,7 @@ import os
 from pytorch_lightning import Trainer
 from torch.utils.data import DataLoader
 
-from leela_zero_pytorch.network import Network
+from leela_zero_pytorch.network import Network, NetworkLightningModule
 from leela_zero_pytorch.dataset import Dataset
 
 
@@ -54,11 +54,11 @@ def test_to_leela_weights(weight_file):
 
 
 def test_train():
-    network = Network(19, 18, 1, 1)
+    module = NetworkLightningModule(19, 18, 1, 1)
     trainer = Trainer(fast_dev_run=True)
     dataset = Dataset.from_data_dir('test-data')
     trainer.fit(
-        network,
+        module,
         train_dataloader=DataLoader(dataset, batch_size=2),
         val_dataloaders=DataLoader(dataset, batch_size=2),
         test_dataloaders=DataLoader(dataset, batch_size=2),

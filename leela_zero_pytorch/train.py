@@ -5,7 +5,7 @@ from omegaconf import DictConfig
 from pytorch_lightning import Trainer
 from torch.utils.data import DataLoader
 
-from leela_zero_pytorch.network import Network
+from leela_zero_pytorch.network import NetworkLightningModule
 from leela_zero_pytorch.dataset import Dataset
 
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 @hydra.main(config_path='conf/config.yaml')
 def main(cfg: DictConfig):
     logger.info(f'Training with the following config:\n{cfg.pretty()}')
-    network = Network(
+    module = NetworkLightningModule(
         cfg.network.board_size,
         cfg.network.in_channels,
         cfg.network.residual_channels,
@@ -26,7 +26,7 @@ def main(cfg: DictConfig):
         gpus=cfg.train.gpus,
     )
     trainer.fit(
-        network,
+        module,
         train_dataloader=DataLoader(
             Dataset.from_data_dir(hydra.utils.to_absolute_path(cfg.dataset.train_dir)),
             shuffle=True,
