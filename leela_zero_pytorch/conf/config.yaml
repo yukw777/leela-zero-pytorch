@@ -5,3 +5,4 @@ dataset:
 
 train:
   gpus: null
+  early_stop: null  # this is pl's default, which enables early stopping
