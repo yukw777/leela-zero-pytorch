@@ -46,6 +46,8 @@ def main(cfg: DictConfig):
             num_workers=cfg.train.n_data_workers,
         ),
     )
+    if cfg.train.run_test:
+        trainer.test()
 
 
 # this function is required to allow automatic detection of the module name when running

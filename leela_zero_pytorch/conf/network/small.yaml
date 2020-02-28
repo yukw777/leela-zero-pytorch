@@ -8,3 +8,4 @@ train:
   batch_size: 512
   max_epochs: 100
   n_data_workers: 4
+  run_test: false
