@@ -26,6 +26,7 @@ def main(cfg: DictConfig):
         max_epochs=cfg.train.max_epochs,
         gpus=cfg.train.gpus,
         early_stop_callback=cfg.train.early_stop,
+        distributed_backend='ddp' if cfg.train.gpus > 1 else None,
     )
     trainer.fit(
         module,
