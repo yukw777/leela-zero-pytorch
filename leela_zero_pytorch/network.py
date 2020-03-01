@@ -242,4 +242,6 @@ class NetworkLightningModule(pl.LightningModule):
     def configure_optimizers(self):
         # taken from leela zero
         # https://github.com/leela-zero/leela-zero/blob/db5569ce8d202f77154f288c21d3f2fa228f9aa3/training/tf/tfprocess.py#L190-L191
-        return torch.optim.SGD(self.parameters(), lr=0.05, momentum=0.9, nesterov=True)
+        sgd_opt = torch.optim.SGD(self.parameters(), lr=0.05, momentum=0.9, nesterov=True)
+        lr_sched = torch.optim.lr_scheduler.ReduceLROnPlateau(sgd_opt, verbose=True)
+        return [sgd_opt], [lr_sched]
