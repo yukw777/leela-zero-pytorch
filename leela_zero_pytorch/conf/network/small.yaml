@@ -3,8 +3,3 @@ network:
   in_channels: 18
   residual_channels: 32
   residual_layers: 8
-
-train:
-  batch_size: 512
-  max_epochs: 100
-  n_data_workers: 4

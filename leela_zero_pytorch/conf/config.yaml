@@ -7,3 +7,6 @@ train:
   gpus: null
   early_stop: false
   run_test: false
+  batch_size: 512
+  max_epochs: 1000
+  n_data_workers: 4
