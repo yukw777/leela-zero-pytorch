@@ -28,6 +28,7 @@ def main(cfg: DictConfig):
         early_stop_callback=cfg.train.early_stop,
         distributed_backend='ddp' if cfg.train.gpus is not None
                             and cfg.train.gpus > 1 else None,
+        train_percent_check=cfg.train.train_percent,
     )
     trainer.fit(
         module,

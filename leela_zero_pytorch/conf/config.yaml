@@ -10,3 +10,4 @@ train:
   batch_size: 512
   max_epochs: 1000
   n_data_workers: 4
+  train_percent: 1.0
