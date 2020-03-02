@@ -29,6 +29,7 @@ def main(cfg: DictConfig):
         distributed_backend='ddp' if cfg.train.gpus is not None
                             and cfg.train.gpus > 1 else None,
         train_percent_check=cfg.train.train_percent,
+        val_percent_check=cfg.train.val_percent,
     )
     trainer.fit(
         module,

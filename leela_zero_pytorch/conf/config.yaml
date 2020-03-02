@@ -11,3 +11,4 @@ train:
   max_epochs: 1000
   n_data_workers: 4
   train_percent: 1.0
+  val_percent: 1.0
