@@ -17,5 +17,5 @@ players = {
 board_size = 19
 komi = 6.5
 
-rounds = 10
+rounds = 5
 competitors = ['lzp-bg', 'lzp-sm']
