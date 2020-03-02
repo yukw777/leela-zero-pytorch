@@ -1,1 +1,2 @@
 weights/leela-zero-pytorch-bg.txt filter=lfs diff=lfs merge=lfs -text
+weights/leela-zero-pytorch-sm.txt filter=lfs diff=lfs merge=lfs -text
