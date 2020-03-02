@@ -5,5 +5,5 @@ dataset:
 
 train:
   gpus: null
-  early_stop: true
+  early_stop: false
   run_test: false
