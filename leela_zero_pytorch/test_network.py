@@ -3,7 +3,6 @@ import pytest
 import tempfile
 import os
 
-from argparse import Namespace
 from pytorch_lightning import Trainer
 from torch.utils.data import DataLoader
 
@@ -55,12 +54,12 @@ def test_to_leela_weights(weight_file):
 
 
 def test_train():
-    module = NetworkLightningModule(Namespace(
-        board_size=19,
-        in_channels=18,
-        residual_channels=1,
-        residual_layers=1,
-    ))
+    module = NetworkLightningModule({
+        'board_size': 19,
+        'in_channels': 18,
+        'residual_channels': 1,
+        'residual_layers': 1,
+    })
     trainer = Trainer(fast_dev_run=True)
     dataset = Dataset.from_data_dir('test-data')
     trainer.fit(

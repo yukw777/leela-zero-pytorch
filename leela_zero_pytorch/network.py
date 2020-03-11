@@ -3,8 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 
-from argparse import Namespace
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Any
 
 from leela_zero_pytorch.dataset import DataPoint
 
@@ -194,14 +193,14 @@ class Network(nn.Module):
 
 class NetworkLightningModule(pl.LightningModule):
 
-    def __init__(self, hparams: Namespace):
+    def __init__(self, hparams: Dict[str, Any]):
         super().__init__()
         self.hparams = hparams
         self.model = Network(
-            hparams.board_size,
-            hparams.in_channels,
-            hparams.residual_channels,
-            hparams.residual_layers,
+            hparams['board_size'],
+            hparams['in_channels'],
+            hparams['residual_channels'],
+            hparams['residual_layers'],
         )
 
     def forward(self, planes, target_pol, target_val):
