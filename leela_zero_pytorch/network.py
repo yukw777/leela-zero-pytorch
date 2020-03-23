@@ -13,24 +13,23 @@ class ConvBlock(nn.Module):
     A convolutional block with a convolution layer, batchnorm (with beta) and an optional relu
 
     Note on the bias for the convolutional layer:
-    Leela Zero actually uses the bias for the convolutional layer as to encode the learnable parameters of the
-    following batch norm layer. This was done so that the format of the weights file didn't have to change when
-    these learnable parameters were added.
+    Leela Zero actually uses the bias for the convolutional layer to represent the learnable parameters (gamma and beta)
+    of the following batch norm layer. This was done so that the format of the weights file, which only has one line
+    for the layer weights and another for the bias, didn't have to change when batch norm layers were added.
 
-    Currently, Leela Zero only uses the `beta` (`bias` in PyTorch) term of batch norm. In Tensorflow, you can tell
-    batch norm to ignore gamma by calling tf.layers.batch_normalization(scale=False). So how do you actually use
-    the convolutional bias to produce the same results as applying the `beta` term in batch norm? Let's first take
+    Currently, Leela Zero only uses the beta term of batch norm, and sets gamma to 1. Then, how do you actually use the
+    convolutional bias to produce the same results as applying the learnable parameters in batch norm? Let's first take
     a look at the equation for batch norm:
 
     y = gamma * (x - mean)/sqrt(var - eps) + beta
 
-    For Leela Zero, gamma is ignored, so the equation becomes:
+    Since Leela Zero sets gamma to 1, the equation becomes:
 
     y = (x - mean)/sqrt(var - eps) + beta
 
-    Now, let `x_conv` be the output of a convolution layer w/out the bias. Then, we want to add some bias to
-    `x_conv`, run it through batch norm without `beta`, and make sure the result is the same as running `x_conv`
-    through the batch norm equation with `beta` above. In an equation form:
+    Now, let `x_conv` be the output of a convolutional layer without the bias. Then, we want to add some bias to
+    `x_conv`, so that when you run it through batch norm without `beta`, the result is the same as running `x_conv`
+    through the batch norm equation with only beta mentioned above. In an equation form:
 
     (x_conv + bias - mean)/sqrt(var - eps) = (x_conv - mean)/sqrt(var - eps) + beta
     x_conv + bias - mean = x_conv - mean + beta * sqrt(var - eps)
@@ -39,9 +38,11 @@ class ConvBlock(nn.Module):
     So if we set the convolutional bias to `beta * sqrt(var - eps)`, we get the desired output, and this is what
     LeelaZero does.
 
-    In PyTorch, you can't set batch normalization layers to ignore only `gamma`, and you can only ignore both
-    `gamma` and `beta`. So, ConvBlock sets batch normalization to ignore both, then simply adds a tensor after,
-    which represents `beta`.
+    In Tensorflow, you can tell the batch norm layer to ignore just the  gamma term by calling
+    `tf.layers.batch_normalization(scale=False)` and be done with it. Unfortunately, in PyTorch you can't set batch
+    normalization layers to ignore only `gamma`; you can only ignore both `gamma` and `beta` by setting the affine
+    parameter to False: `BatchNorm2d(out_channels, affine=False)`. So, ConvBlock sets batch normalization to ignore
+    both, then simply adds a tensor after, which represents `beta`.
     """
 
     def __init__(self, in_channels: int, out_channels: int, kernel_size: int, relu: bool = True):
