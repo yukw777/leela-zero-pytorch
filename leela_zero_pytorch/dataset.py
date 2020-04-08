@@ -16,7 +16,8 @@ DataPoint = Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
 
 
 def stone_plane(plane: np.ndarray) -> torch.Tensor:
-    bits = np.unpackbits(plane)[7:]
+    # throw away the padding added by the last bit
+    bits = np.unpackbits(plane)[:-7]
     return torch.tensor(bits).float().view(19, 19)
 
 
@@ -33,7 +34,22 @@ def move_plane(turn: int) -> List[torch.Tensor]:
 
 
 def hex_to_ndarray(hex: str) -> np.ndarray:
-    return np.array(bytearray.fromhex('0' + hex))
+    # For a board with an odd number of rows and columns,
+    # there are a total of (2*k+1)^2 = 4*k^2 + 4*k + 1 positions or "bits"
+    # If we write this out as a hexadecimal, i.e. group by 4 bits (2^4 = 16),
+    # there will always be 1 bit left, i.e. (4*k^2 + 4*k + 1) % 4 = 1.
+    # LeelaZero handles this in a unique way:
+    # Instead of treating the bit array as one hexadecimal (by prepending it with 0s to make the length divisible by 4),
+    # it just appends the last bit at the end as '0' or '1'. So we first need to parse the hex string without the last
+    # digit, then append a bit to the parsed bit array at the end.
+    # More details in the code below:
+    # https://github.com/leela-zero/leela-zero/blob/b259e50d5cce34a12176846534f369ef5ffcebc1/src/Training.cpp#L260-L264
+
+    # turn the first bytes into a bit array
+    bit_array = np.unpackbits(np.array(bytearray.fromhex(hex[:-1])))
+
+    # append the last bit and pack it
+    return np.packbits(np.append(bit_array, int(hex[-1])))
 
 
 def get_data_from_file(fname: str) -> Tuple[List[np.ndarray], List[int], List[np.ndarray], List[int]]:
