@@ -227,7 +227,7 @@ class NetworkLightningModule(pl.LightningModule):
         pred, target = self.forward(*batch)
         return {'val_loss': self.loss(pred, target)}
 
-    def validation_end(self, outputs):
+    def validation_epoch_end(self, outputs):
         val_loss_mean = torch.stack([x['val_loss'] for x in outputs]).mean()
         return {'log': {'validation_loss': val_loss_mean}, 'val_loss': val_loss_mean}
 
@@ -235,7 +235,7 @@ class NetworkLightningModule(pl.LightningModule):
         pred, target = self.forward(*batch)
         return {'test_loss': self.loss(pred, target)}
 
-    def test_end(self, outputs):
+    def test_epoch_end(self, outputs):
         test_loss_mean = torch.stack([x['test_loss'] for x in outputs]).mean()
         return {'log': {'test_loss': test_loss_mean}, 'test_loss': test_loss_mean}
 
