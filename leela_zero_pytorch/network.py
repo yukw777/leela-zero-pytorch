@@ -208,36 +208,68 @@ class NetworkLightningModule(pl.LightningModule):
         return self.model(planes, target_pol, target_val)
 
     def loss(self, pred: Tuple[torch.Tensor, torch.Tensor],
-             target: Tuple[torch.Tensor, torch.Tensor]) -> torch.Tensor:
+             target: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         pred_move, pred_val = pred
         target_move, target_val = target
         cross_entropy_loss = F.cross_entropy(pred_move, target_move)
         mse_loss = F.mse_loss(pred_val.squeeze(), target_val)
-        return mse_loss + cross_entropy_loss
+        return mse_loss, cross_entropy_loss, mse_loss + cross_entropy_loss
 
     def training_step(self, batch: DataPoint, batch_idx: int) -> Dict:
         pred, target = self.forward(*batch)
-        loss = self.loss(pred, target)
+        mse_loss, cross_entropy_loss, loss = self.loss(pred, target)
         return {
             'loss': loss,
-            'log': {'training_loss': loss},
+            'log': {
+                'training_loss': loss,
+                'training_mse_loss': mse_loss,
+                'training_ce_loss': cross_entropy_loss,
+            },
         }
 
     def validation_step(self, batch: DataPoint, batch_idx: int) -> Dict:
         pred, target = self.forward(*batch)
-        return {'val_loss': self.loss(pred, target)}
+        mse_loss, cross_entropy_loss, loss = self.loss(pred, target)
+        return {
+            'val_loss': loss,
+            'val_mse_loss': mse_loss,
+            'val_ce_loss': cross_entropy_loss,
+        }
 
     def validation_epoch_end(self, outputs):
-        val_loss_mean = torch.stack([x['val_loss'] for x in outputs]).mean()
-        return {'log': {'validation_loss': val_loss_mean}, 'val_loss': val_loss_mean}
+        loss_mean = torch.stack([x['val_loss'] for x in outputs]).mean()
+        mse_loss_mean = torch.stack([x['val_mse_loss'] for x in outputs]).mean()
+        ce_loss_mean = torch.stack([x['val_ce_loss'] for x in outputs]).mean()
+        return {
+            'log': {
+                'validation_loss': loss_mean,
+                'validation_mse_loss': mse_loss_mean,
+                'validation_ce_loss': ce_loss_mean,
+            },
+            'val_loss': loss_mean,
+        }
 
     def test_step(self, batch: DataPoint, batch_idx: int) -> Dict:
         pred, target = self.forward(*batch)
-        return {'test_loss': self.loss(pred, target)}
+        mse_loss, cross_entropy_loss, loss = self.loss(pred, target)
+        return {
+            'test_loss': loss,
+            'test_mse_loss': mse_loss,
+            'test_ce_loss': cross_entropy_loss,
+        }
 
     def test_epoch_end(self, outputs):
-        test_loss_mean = torch.stack([x['test_loss'] for x in outputs]).mean()
-        return {'log': {'test_loss': test_loss_mean}, 'test_loss': test_loss_mean}
+        loss_mean = torch.stack([x['test_loss'] for x in outputs]).mean()
+        mse_loss_mean = torch.stack([x['test_mse_loss'] for x in outputs]).mean()
+        ce_loss_mean = torch.stack([x['test_ce_loss'] for x in outputs]).mean()
+        return {
+            'log': {
+                'test_loss': loss_mean,
+                'test_mse_loss': mse_loss_mean,
+                'test_ce_loss': ce_loss_mean,
+            },
+            'val_loss': loss_mean,
+        }
 
     def configure_optimizers(self):
         # taken from leela zero
