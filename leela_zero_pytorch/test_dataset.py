@@ -84,8 +84,8 @@ def test_go_dataset(filenames: List[str], length: int):
     assert len(view) == length
     random_idx = random.randrange(0, len(view))
 
-    planes, probs, outcome = view[random_idx]
+    planes, moves, outcome = view[random_idx]
     assert planes.size() == (18, 19, 19)
-    assert probs.item() in list(range(19 * 19 + 1))
-    assert probs.dtype == torch.int64
+    assert moves.item() in list(range(19 * 19 + 1))
+    assert moves.dtype == torch.int64
     assert outcome.item() in (-1, 1)
