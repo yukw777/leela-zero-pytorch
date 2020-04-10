@@ -79,7 +79,7 @@ def test_move_plane(turn: int, planes: List[torch.Tensor]):
         (['test-data/kgs.0.gz', 'test-data/kgs.1.gz'], 13024),
     )
 )
-def test_go_data_view(filenames: List[str], length: int):
+def test_go_dataset(filenames: List[str], length: int):
     view = Dataset(filenames)
     assert len(view) == length
     random_idx = random.randrange(0, len(view))
