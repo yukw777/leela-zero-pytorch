@@ -53,14 +53,14 @@ def test_to_leela_weights(weight_file):
     os.remove(tmp)
 
 
-def test_train():
+def test_train(tmp_path):
     module = NetworkLightningModule({
         'board_size': 19,
         'in_channels': 18,
         'residual_channels': 1,
         'residual_layers': 1,
     })
-    trainer = Trainer(fast_dev_run=True)
+    trainer = Trainer(fast_dev_run=True, default_save_path=tmp_path)
     dataset = Dataset.from_data_dir('test-data')
     trainer.fit(
         module,
