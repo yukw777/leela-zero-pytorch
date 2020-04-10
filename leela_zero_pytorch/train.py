@@ -33,7 +33,7 @@ def main(cfg: DictConfig):
     trainer.fit(
         module,
         train_dataloader=DataLoader(
-            Dataset.from_data_dir(hydra.utils.to_absolute_path(cfg.dataset.train_dir)),
+            Dataset.from_data_dir(hydra.utils.to_absolute_path(cfg.dataset.train_dir), transform=True),
             shuffle=True,
             batch_size=cfg.train.batch_size,
             num_workers=cfg.train.n_data_workers,

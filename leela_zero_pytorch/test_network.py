@@ -61,10 +61,11 @@ def test_train(tmp_path):
         'residual_layers': 1,
     })
     trainer = Trainer(fast_dev_run=True, default_save_path=tmp_path)
+    train_dataset = Dataset.from_data_dir('test-data', transform=True)
     dataset = Dataset.from_data_dir('test-data')
     trainer.fit(
         module,
-        train_dataloader=DataLoader(dataset, batch_size=2),
+        train_dataloader=DataLoader(train_dataset, batch_size=2, shuffle=True),
         val_dataloaders=DataLoader(dataset, batch_size=2),
         test_dataloaders=DataLoader(dataset, batch_size=2),
     )

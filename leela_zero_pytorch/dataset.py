@@ -104,7 +104,8 @@ def transform_move_prob_plane(plane: torch.Tensor, board_size: int, k: int, hfli
 
 class Dataset:
 
-    def __init__(self, filenames: List[str]):
+    def __init__(self, filenames: List[str], transform: bool):
+        self.transform = transform
         stone_planes: List[np.ndarray] = []
         turn_planes: List[int] = []
         move_probs: List[np.ndarray] = []
@@ -123,23 +124,31 @@ class Dataset:
         self.outcomes = np.array(outcomes)
 
     def __getitem__(self, idx: int) -> DataPoint:
-        # parameters for random transformation
-        rotations = random.randrange(4)
-        hflip = bool(random.getrandbits(1))
-
-        # prepare the stone planes with transformation
+        # prepare the stone planes
         input_planes: List[torch.Tensor] = []
         for plane in self.stone_planes[idx * 16: (idx + 1) * 16]:
-            input_planes.append(transform(stone_plane(plane), rotations, hflip))
+            input_planes.append(stone_plane(plane))
 
         # prepare the turn planes
-        # no need for transformation as they're just all 1s and 0s
         input_planes.extend(turn_plane(self.turn_planes[idx]))
 
-        # transform the move prob plane
-        move_probs = transform_move_prob_plane(torch.from_numpy(self.move_probs[idx]), 19, rotations, hflip)
+        # stack all the planes
+        stacked_input = torch.stack(input_planes)
+
+        # prepare the move probs
+        move_probs = torch.from_numpy(self.move_probs[idx])
+
+        if self.transform:
+            # transform for data augmentation
+
+            # parameters for random transformation
+            rotations = random.randrange(4)
+            hflip = bool(random.getrandbits(1))
+
+            stacked_input = transform(stacked_input, rotations, hflip)
+            move_probs = transform_move_prob_plane(move_probs, 19, rotations, hflip)
         return (
-            torch.stack(input_planes),
+            stacked_input,
             move_probs.argmax(),
             torch.tensor(self.outcomes[idx]).float(),
         )
@@ -148,5 +157,5 @@ class Dataset:
         return len(self.outcomes)
 
     @classmethod
-    def from_data_dir(cls, path: str):
-        return cls(glob.glob(os.path.join(path, '*.gz')))
+    def from_data_dir(cls, path: str, transform: bool = False):
+        return cls(glob.glob(os.path.join(path, '*.gz')), transform)

@@ -73,6 +73,7 @@ def test_turn_plane(turn: int, planes: List[torch.Tensor]):
     assert all(a.equal(b) for a, b in zip(turn_plane(turn), planes))
 
 
+@pytest.mark.parametrize('transform', [True, False])
 @pytest.mark.parametrize(
     'filenames,length',
     (
@@ -81,8 +82,8 @@ def test_turn_plane(turn: int, planes: List[torch.Tensor]):
         (['test-data/kgs.0.gz', 'test-data/kgs.1.gz'], 13024),
     )
 )
-def test_go_dataset(filenames: List[str], length: int):
-    view = Dataset(filenames)
+def test_go_dataset(filenames: List[str], length: int, transform: bool):
+    view = Dataset(filenames, transform)
     assert len(view) == length
     random_idx = random.randrange(0, len(view))
 
