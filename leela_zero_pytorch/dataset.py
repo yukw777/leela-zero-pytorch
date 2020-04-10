@@ -75,6 +75,17 @@ def get_data_from_file(fname: str) -> Tuple[List[np.ndarray], List[int], List[np
     return stone_planes, move_planes, move_probs, outcomes
 
 
+def transform(planes: torch.Tensor, k: int, hflip: bool) -> torch.Tensor:
+    """
+    Rotate the planes 90 degrees `k` times and flip them horizontally if `hflip` is True.
+    """
+    dim = planes.dim()
+    transformed = planes.rot90(k, (dim - 1, dim - 2))
+    if hflip:
+        return transformed.flip(dim - 1)
+    return transformed
+
+
 class Dataset:
 
     def __init__(self, filenames: List[str]):
