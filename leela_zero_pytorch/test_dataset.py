@@ -4,7 +4,9 @@ import random
 
 from typing import List
 
-from leela_zero_pytorch.dataset import move_plane, stone_plane, Dataset, hex_to_ndarray, transform
+from leela_zero_pytorch.dataset import (
+    turn_plane, stone_plane, Dataset, hex_to_ndarray, transform, transform_move_prob_plane
+)
 
 
 @pytest.mark.parametrize(
@@ -67,8 +69,8 @@ def test_stone_plane(plane: str, plane_tensor: torch.Tensor):
         (1, [torch.zeros(19, 19), torch.ones(19, 19)]),
     )
 )
-def test_move_plane(turn: int, planes: List[torch.Tensor]):
-    assert all(a.equal(b) for a, b in zip(move_plane(turn), planes))
+def test_turn_plane(turn: int, planes: List[torch.Tensor]):
+    assert all(a.equal(b) for a, b in zip(turn_plane(turn), planes))
 
 
 @pytest.mark.parametrize(
@@ -239,3 +241,52 @@ def test_go_dataset(filenames: List[str], length: int):
 )
 def test_transform(planes, k, hflip, transformed):
     assert transform(planes, k, hflip).equal(transformed)
+
+
+@pytest.mark.parametrize(
+    'plane,k,hflip,transformed',
+    [
+        (
+            torch.tensor([1, 0, 0, 0, 0, 0, 2, 0, 0, 1]),
+            0, False,
+            torch.tensor([1, 0, 0, 0, 0, 0, 2, 0, 0, 1]),
+        ),
+        (
+            torch.tensor([1, 0, 0, 0, 0, 0, 2, 0, 0, 1]),
+            0, True,
+            torch.tensor([0, 0, 1, 0, 0, 0, 0, 0, 2, 1]),
+        ),
+        (
+            torch.tensor([1, 0, 0, 0, 0, 0, 2, 0, 0, 1]),
+            1, False,
+            torch.tensor([2, 0, 1, 0, 0, 0, 0, 0, 0, 1]),
+        ),
+        (
+            torch.tensor([1, 0, 0, 0, 0, 0, 2, 0, 0, 1]),
+            1, True,
+            torch.tensor([1, 0, 2, 0, 0, 0, 0, 0, 0, 1]),
+        ),
+        (
+            torch.tensor([1, 0, 0, 0, 0, 0, 2, 0, 0, 1]),
+            2, False,
+            torch.tensor([0, 0, 2, 0, 0, 0, 0, 0, 1, 1]),
+        ),
+        (
+            torch.tensor([1, 0, 0, 0, 0, 0, 2, 0, 0, 1]),
+            2, True,
+            torch.tensor([2, 0, 0, 0, 0, 0, 1, 0, 0, 1]),
+        ),
+        (
+            torch.tensor([1, 0, 0, 0, 0, 0, 2, 0, 0, 1]),
+            3, False,
+            torch.tensor([0, 0, 0, 0, 0, 0, 1, 0, 2, 1]),
+        ),
+        (
+            torch.tensor([1, 0, 0, 0, 0, 0, 2, 0, 0, 1]),
+            3, True,
+            torch.tensor([0, 0, 0, 0, 0, 0, 2, 0, 1, 1]),
+        ),
+    ]
+)
+def test_transform_move_prob_plane(plane, k, hflip, transformed):
+    assert transform_move_prob_plane(plane, 3, k, hflip).equal(transformed)
