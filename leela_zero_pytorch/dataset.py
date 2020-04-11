@@ -3,13 +3,13 @@ import glob
 import os
 import torch
 import ctypes
-import multiprocessing as mp
 import numpy as np
 import gzip
 import random
 
 from typing import Tuple, List
 from itertools import cycle
+from multiprocessing.sharedctypes import RawArray
 from concurrent.futures import ProcessPoolExecutor
 
 logger = logging.getLogger(__name__)
@@ -117,9 +117,21 @@ def parse_data_files(filenames: List[str]) -> Tuple[np.ndarray, np.ndarray, np.n
         3: game outcomes
     """
     def move_to_shared(arr: np.ndarray, ctype) -> np.ndarray:
-        shape = arr.shape
-        base = mp.Array(ctype, arr.flatten())
-        return np.ctypeslib.as_array(base.get_obj()).reshape(shape)
+        # we need to do the following to speed up assignments
+        # see: https://stackoverflow.com/a/42037444
+
+        # first create an empty shared raw array
+        # no need to use Array as we don't need synchronization (it's read-only)
+        base = RawArray(ctype, arr.size)
+
+        # turn it into a shared numpy array
+        shared = np.ctypeslib.as_array(base)
+
+        # now assign
+        shared[:] = arr.flatten()
+
+        # reshape and return
+        return shared.reshape(arr.shape)
 
     stone_planes: List[np.ndarray] = []
     turn_planes: List[int] = []
