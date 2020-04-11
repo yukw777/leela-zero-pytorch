@@ -2,14 +2,12 @@ import logging
 import glob
 import os
 import torch
-import ctypes
 import numpy as np
 import gzip
 import random
 
 from typing import Tuple, List
 from itertools import cycle
-from multiprocessing.sharedctypes import RawArray
 from concurrent.futures import ProcessPoolExecutor
 
 logger = logging.getLogger(__name__)
@@ -104,63 +102,26 @@ def transform_move_prob_plane(plane: torch.Tensor, board_size: int, k: int, hfli
     return torch.cat((transformed, pass_move.view(1, 1))).flatten()
 
 
-def parse_data_files(filenames: List[str]) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Parse data files into 4 numpy arrays backed by Python's multiprocessing.Array so that they can
-    be shared among multiple processes, i.e. PyTorch Dataloader.
-
-    :param filenames: data file names
-    :return: a tuple of 4 numpy arrays
-        0: stone planes
-        1: turn planes
-        2: move probabilities
-        3: game outcomes
-    """
-    def move_to_shared(arr: np.ndarray, ctype) -> np.ndarray:
-        # we need to do the following to speed up assignments
-        # see: https://stackoverflow.com/a/42037444
-
-        # first create an empty shared raw array
-        # no need to use Array as we don't need synchronization (it's read-only)
-        base = RawArray(ctype, arr.size)
-
-        # turn it into a shared numpy array
-        shared = np.ctypeslib.as_array(base)
-
-        # now assign
-        shared[:] = arr.flatten()
-
-        # reshape and return
-        return shared.reshape(arr.shape)
-
-    stone_planes: List[np.ndarray] = []
-    turn_planes: List[int] = []
-    move_probs: List[np.ndarray] = []
-    outcomes: List[int] = []
-    with ProcessPoolExecutor() as executor:
-        for data in executor.map(get_data_from_file, filenames):
-            f_stone_planes, f_turn_planes, f_move_probs, f_outcomes = data
-            stone_planes.extend(f_stone_planes)
-            turn_planes.extend(f_turn_planes)
-            move_probs.extend(f_move_probs)
-            outcomes.extend(f_outcomes)
-    return (
-        move_to_shared(np.stack(stone_planes) if len(stone_planes) > 0 else np.empty((0, 19, 19)), ctypes.c_uint8),
-        move_to_shared(np.array(turn_planes), ctypes.c_int),
-        move_to_shared(np.stack(move_probs) if len(move_probs) > 0 else np.empty((0, 19*19+1)), ctypes.c_float),
-        move_to_shared(np.array(outcomes), ctypes.c_int),
-    )
-
-
 class Dataset:
 
-    def __init__(self, stone_planes: np.ndarray, turn_planes: np.ndarray,
-                 move_probs: np.ndarray, outcomes: np.ndarray, transform: bool):
+    def __init__(self, filenames: List[str], transform: bool):
         self.transform = transform
-        self.stone_planes = stone_planes
-        self.turn_planes = turn_planes
-        self.move_probs = move_probs
-        self.outcomes = outcomes
+        stone_planes: List[np.ndarray] = []
+        turn_planes: List[int] = []
+        move_probs: List[np.ndarray] = []
+        outcomes: List[int] = []
+        self.raw_datapoints: List[List[str]] = []
+        with ProcessPoolExecutor() as executor:
+            for data in executor.map(get_data_from_file, filenames):
+                f_stone_planes, f_turn_planes, f_move_probs, f_outcomes = data
+                stone_planes.extend(f_stone_planes)
+                turn_planes.extend(f_turn_planes)
+                move_probs.extend(f_move_probs)
+                outcomes.extend(f_outcomes)
+        self.stone_planes = np.stack(stone_planes) if len(stone_planes) > 0 else np.empty((0, 19, 19))
+        self.turn_planes = np.array(turn_planes)
+        self.move_probs = np.stack(move_probs) if len(move_probs) > 0 else np.empty((0, 19*19+1))
+        self.outcomes = np.array(outcomes)
 
     def __getitem__(self, idx: int) -> DataPoint:
         # prepare the stone planes
@@ -197,4 +158,4 @@ class Dataset:
 
     @classmethod
     def from_data_dir(cls, path: str, transform: bool = False):
-        return cls(*parse_data_files(glob.glob(os.path.join(path, '*.gz'))), transform)
+        return cls(glob.glob(os.path.join(path, '*.gz')), transform)

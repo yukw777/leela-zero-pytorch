@@ -66,7 +66,7 @@ def test_train(tmp_path):
     dataset = Dataset.from_data_dir('test-data')
     trainer.fit(
         module,
-        train_dataloader=DataLoader(train_dataset, batch_size=2, shuffle=True, num_workers=2),
-        val_dataloaders=DataLoader(dataset, batch_size=2, num_workers=2),
-        test_dataloaders=DataLoader(dataset, batch_size=2, num_workers=2),
+        train_dataloader=DataLoader(train_dataset, batch_size=2, shuffle=True),
+        val_dataloaders=DataLoader(dataset, batch_size=2),
+        test_dataloaders=DataLoader(dataset, batch_size=2),
     )

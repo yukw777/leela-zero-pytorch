@@ -5,8 +5,7 @@ import random
 from typing import List
 
 from leela_zero_pytorch.dataset import (
-    turn_plane, stone_plane, Dataset, hex_to_ndarray, transform,
-    transform_move_prob_plane, parse_data_files
+    turn_plane, stone_plane, Dataset, hex_to_ndarray, transform, transform_move_prob_plane
 )
 
 
@@ -84,7 +83,7 @@ def test_turn_plane(turn: int, planes: List[torch.Tensor]):
     )
 )
 def test_go_dataset(filenames: List[str], length: int, transform: bool):
-    view = Dataset(*parse_data_files(filenames), transform)
+    view = Dataset(filenames, transform)
     assert len(view) == length
     random_idx = random.randrange(0, len(view))
 
