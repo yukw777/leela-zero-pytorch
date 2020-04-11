@@ -15,13 +15,16 @@ logger = logging.getLogger(__name__)
 @hydra.main(config_path='conf/config.yaml')
 def main(cfg: DictConfig):
     logger.info(f'Training with the following config:\n{cfg.pretty()}')
-    module = NetworkLightningModule({
-        'board_size': cfg.network.board_size,
-        'in_channels': cfg.network.in_channels,
-        'residual_channels': cfg.network.residual_channels,
-        'residual_layers': cfg.network.residual_layers,
-        'learning_rate': cfg.train.learning_rate,
-    })
+    if cfg.train.resume_checkpoint:
+        module = NetworkLightningModule.load_from_checkpoint(hydra.utils.to_absolute_path(cfg.train.resume_checkpoint))
+    else:
+        module = NetworkLightningModule({
+            'board_size': cfg.network.board_size,
+            'in_channels': cfg.network.in_channels,
+            'residual_channels': cfg.network.residual_channels,
+            'residual_layers': cfg.network.residual_layers,
+            'learning_rate': cfg.train.learning_rate,
+        })
     trainer = Trainer(
         max_epochs=cfg.train.max_epochs,
         gpus=cfg.train.gpus,
