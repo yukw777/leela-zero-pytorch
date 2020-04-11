@@ -1,13 +1,11 @@
 competition_type = 'allplayall'
 
 players = {
-    # previous best, trained with flambe
     'lzp-bg': Player('leelaz --gtp -w weights/leela-zero-pytorch-bg.txt',
                       startup_gtp_commands=[
                           'time_settings 0 11 1',
                       ]),
 
-    # new small network trained with pytorch-lightning
     'lzp-sm': Player('leelaz --gtp -w weights/leela-zero-pytorch-sm.txt',
                      startup_gtp_commands=[
                           'time_settings 0 11 1',
