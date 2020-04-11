@@ -20,6 +20,7 @@ def main(cfg: DictConfig):
         'in_channels': cfg.network.in_channels,
         'residual_channels': cfg.network.residual_channels,
         'residual_layers': cfg.network.residual_layers,
+        'learning_rate': cfg.train.learning_rate,
     })
     trainer = Trainer(
         max_epochs=cfg.train.max_epochs,

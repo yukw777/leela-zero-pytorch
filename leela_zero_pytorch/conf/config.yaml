@@ -9,6 +9,7 @@ train:
   run_test: false
   batch_size: 512
   max_epochs: 1000
+  learning_rate: 0.05
   n_data_workers: 4
   train_percent: 1.0
   val_percent: 1.0

@@ -59,6 +59,7 @@ def test_train(tmp_path):
         'in_channels': 18,
         'residual_channels': 1,
         'residual_layers': 1,
+        'learning_rate': 0.05,
     })
     trainer = Trainer(fast_dev_run=True, default_save_path=tmp_path)
     train_dataset = Dataset.from_data_dir('test-data', transform=True)
