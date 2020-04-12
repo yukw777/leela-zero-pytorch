@@ -19,4 +19,4 @@ Leela Zero comes with a tool that turns sgf files into datasets that can be fed 
 1. Once the training is over, run `lzp-weights`. Example `lzp-weights path/to/checkpoint.ckpt weights.txt`.
 
 # Pretrained Weights
-Please see [weights](weights) folder for pretrained weights. You can use them directly with Leela Zero.
+I have trained three networks using the same training data of about 1.3 million positions generated from the KGS game records. The huge network ([weights](weights/leela-zero-pytorch-huge.txt), [config](leela_zero_pytorch/conf/network/huge.yaml)) is strongest, followed by the big network ([weights](weights/leela-zero-pytorch-bg.txt), [config](leela_zero_pytorch/conf/network/big.yaml)), and followed by the small network ([weights](weights/leela-zero-pytorch-sm.txt), [config](leela_zero_pytorch/conf/network/small.yaml)). You can use them directly with Leela Zero.
