@@ -11,7 +11,8 @@ from leela_zero_pytorch.dataset import Dataset
 
 
 @pytest.mark.parametrize(
-    "board_size,in_channels,residual_channels,residual_layers,input_size,pol_output_size,val_output_size",
+    "board_size,in_channels,residual_channels,residual_layers,input_size,"
+    "pol_output_size,val_output_size",
     (
         (19, 9, 64, 3, (36, 9, 19, 19), (36, 19 * 19 + 1), (36, 1)),
         (19, 18, 128, 6, (36, 18, 19, 19), (36, 19 * 19 + 1), (36, 1)),

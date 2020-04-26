@@ -40,8 +40,9 @@ def hex_to_ndarray(hex: str) -> np.ndarray:
     # If we write this out as a hexadecimal, i.e. group by 4 bits (2^4 = 16),
     # there will always be 1 bit left, i.e. (4*k^2 + 4*k + 1) % 4 = 1.
     # LeelaZero handles this in a unique way:
-    # Instead of treating the bit array as one hexadecimal (by prepending it with 0s to make the length divisible by 4),
-    # it just appends the last bit at the end as '0' or '1'. So we first need to parse the hex string without the last
+    # Instead of treating the bit array as one hexadecimal (by prepending it with 0s to
+    # make the length divisible by 4), it just appends the last bit at the end as
+    # '0' or '1'. So we first need to parse the hex string without the last
     # digit, then append a bit to the parsed bit array at the end.
     # More details in the code below:
     # https://github.com/leela-zero/leela-zero/blob/b259e50d5cce34a12176846534f369ef5ffcebc1/src/Training.cpp#L260-L264
@@ -82,7 +83,8 @@ def get_data_from_file(
 
 def transform(planes: torch.Tensor, k: int, hflip: bool) -> torch.Tensor:
     """
-    Rotate the planes 90 degrees `k` times and flip them horizontally if `hflip` is True.
+    Rotate the planes 90 degrees `k` times and flip them horizontally if `hflip`
+    is True.
     """
     dim = planes.dim()
     transformed = planes.rot90(k, (dim - 1, dim - 2))
@@ -95,7 +97,8 @@ def transform_move_prob_plane(
     plane: torch.Tensor, board_size: int, k: int, hflip: bool
 ) -> torch.Tensor:
     """
-    Transform the move prob plane. The last bit is for passing, so transform everything before that.
+    Transform the move prob plane. The last bit is for passing, so transform everything
+    before that.
     """
     # extract the board
     board, pass_move = plane[:-1], plane[-1]
