@@ -78,5 +78,5 @@ def test_train(tmp_path):
         module,
         train_dataloader=DataLoader(train_dataset, batch_size=2, shuffle=True),
         val_dataloaders=DataLoader(dataset, batch_size=2),
-        test_dataloaders=DataLoader(dataset, batch_size=2),
     )
+    trainer.test(test_dataloaders=DataLoader(dataset, batch_size=2))

@@ -1,2 +1,2 @@
-pytorch-lightning~=0.7.1
+pytorch-lightning~=0.7.4
 hydra-core~=0.11.3
