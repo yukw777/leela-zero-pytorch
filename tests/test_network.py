@@ -37,7 +37,7 @@ def test_network(
 
 @pytest.fixture
 def weight_file():
-    return open("test-data/weights.txt", "r")
+    return open("tests/test-data/weights.txt", "r")
 
 
 def test_to_leela_weights(weight_file):

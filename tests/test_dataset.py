@@ -113,9 +113,9 @@ def test_turn_plane(turn: int, planes: List[torch.Tensor]):
 @pytest.mark.parametrize(
     "filenames,length",
     (
-        (["test-data/kgs.0.gz"], 6366),
-        (["test-data/kgs.1.gz"], 6658),
-        (["test-data/kgs.0.gz", "test-data/kgs.1.gz"], 13024),
+        (["tests/test-data/kgs.0.gz"], 6366),
+        (["tests/test-data/kgs.1.gz"], 6658),
+        (["tests/test-data/kgs.0.gz", "tests/test-data/kgs.1.gz"], 13024),
     ),
 )
 def test_go_dataset(filenames: List[str], length: int, transform: bool):
