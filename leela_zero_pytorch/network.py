@@ -45,7 +45,9 @@ class ConvBlock(nn.Module):
     both, then simply adds a tensor after, which represents `beta`.
     """
 
-    def __init__(self, in_channels: int, out_channels: int, kernel_size: int, relu: bool = True):
+    def __init__(
+        self, in_channels: int, out_channels: int, kernel_size: int, relu: bool = True
+    ):
         super().__init__()
         # we only support the kernel sizes of 1 and 3
         assert kernel_size in (1, 3)
@@ -55,14 +57,14 @@ class ConvBlock(nn.Module):
             out_channels,
             kernel_size,
             padding=1 if kernel_size == 3 else 0,
-            bias=False
+            bias=False,
         )
         self.bn = nn.BatchNorm2d(out_channels, affine=False)
         self.beta = nn.Parameter(torch.zeros(out_channels))  # type: ignore
         self.relu = relu
 
         # initializations
-        nn.init.kaiming_normal_(self.conv.weight, mode='fan_out', nonlinearity='relu')
+        nn.init.kaiming_normal_(self.conv.weight, mode="fan_out", nonlinearity="relu")
 
     def forward(self, x):
         x = self.conv(x)
@@ -72,7 +74,6 @@ class ConvBlock(nn.Module):
 
 
 class ResBlock(nn.Module):
-
     def __init__(self, in_channels: int, out_channels: int):
         super().__init__()
         self.conv1 = ConvBlock(in_channels, out_channels, 3)
@@ -89,14 +90,25 @@ class ResBlock(nn.Module):
 
 
 class Network(nn.Module):
-
-    def __init__(self, board_size: int, in_channels: int, residual_channels: int, residual_layers: int):
+    def __init__(
+        self,
+        board_size: int,
+        in_channels: int,
+        residual_channels: int,
+        residual_layers: int,
+    ):
         super().__init__()
         self.conv_input = ConvBlock(in_channels, residual_channels, 3)
         self.residual_tower = nn.Sequential(
-            *[ResBlock(residual_channels, residual_channels) for _ in range(residual_layers)])
+            *[
+                ResBlock(residual_channels, residual_channels)
+                for _ in range(residual_layers)
+            ]
+        )
         self.policy_conv = ConvBlock(residual_channels, 2, 1)
-        self.policy_fc = nn.Linear(2 * board_size * board_size, board_size * board_size + 1)
+        self.policy_fc = nn.Linear(
+            2 * board_size * board_size, board_size * board_size + 1
+        )
         self.value_conv = ConvBlock(residual_channels, 1, 1)
         self.value_fc_1 = nn.Linear(board_size * board_size, 256)
         self.value_fc_2 = nn.Linear(256, 1)
@@ -154,9 +166,9 @@ class Network(nn.Module):
                    2 (value head first linear) +
                    2 (value head second linear)
         """
-        with open(filename, 'w') as f:
+        with open(filename, "w") as f:
             # version tag
-            f.write('1\n')
+            f.write("1\n")
             for child in self.children():
                 # newline unless last line (single bias)
                 if isinstance(child, ConvBlock):
@@ -171,10 +183,13 @@ class Network(nn.Module):
                             f.write(self.conv_block_to_leela_weights(grand_child.conv1))
                             f.write(self.conv_block_to_leela_weights(grand_child.conv2))
                         else:
-                            err = 'Sequential should only have ResBlocks, but found ' + str(type(grand_child))
+                            err = (
+                                "Sequential should only have ResBlocks, but found "
+                                + str(type(grand_child))
+                            )
                             raise ValueError(err)
                 else:
-                    raise ValueError('Unknown layer type' + str(type(child)))
+                    raise ValueError("Unknown layer type" + str(type(child)))
 
     @staticmethod
     def conv_block_to_leela_weights(conv_block: ConvBlock) -> str:
@@ -185,30 +200,32 @@ class Network(nn.Module):
         weights.append(Network.tensor_to_leela_weights(bias))
         weights.append(Network.tensor_to_leela_weights(conv_block.bn.running_mean))  # type: ignore
         weights.append(Network.tensor_to_leela_weights(conv_block.bn.running_var))  # type: ignore
-        return ''.join(weights)
+        return "".join(weights)
 
     @staticmethod
     def tensor_to_leela_weights(t: torch.Tensor) -> str:
-        return " ".join([str(w) for w in t.detach().numpy().ravel()]) + '\n'
+        return " ".join([str(w) for w in t.detach().numpy().ravel()]) + "\n"
 
 
 class NetworkLightningModule(pl.LightningModule):
-
     def __init__(self, hparams: Dict[str, Any]):
         super().__init__()
         self.hparams = hparams
         self.model = Network(
-            hparams['board_size'],
-            hparams['in_channels'],
-            hparams['residual_channels'],
-            hparams['residual_layers'],
+            hparams["board_size"],
+            hparams["in_channels"],
+            hparams["residual_channels"],
+            hparams["residual_layers"],
         )
 
     def forward(self, planes, target_pol, target_val):
         return self.model(planes, target_pol, target_val)
 
-    def loss(self, pred: Tuple[torch.Tensor, torch.Tensor],
-             target: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def loss(
+        self,
+        pred: Tuple[torch.Tensor, torch.Tensor],
+        target: Tuple[torch.Tensor, torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         pred_move, pred_val = pred
         target_move, target_val = target
         cross_entropy_loss = F.cross_entropy(pred_move, target_move)
@@ -219,11 +236,11 @@ class NetworkLightningModule(pl.LightningModule):
         pred, target = self.forward(*batch)
         mse_loss, cross_entropy_loss, loss = self.loss(pred, target)
         return {
-            'loss': loss,
-            'log': {
-                'training_loss': loss,
-                'training_mse_loss': mse_loss,
-                'training_ce_loss': cross_entropy_loss,
+            "loss": loss,
+            "log": {
+                "training_loss": loss,
+                "training_mse_loss": mse_loss,
+                "training_ce_loss": cross_entropy_loss,
             },
         }
 
@@ -231,50 +248,57 @@ class NetworkLightningModule(pl.LightningModule):
         pred, target = self.forward(*batch)
         mse_loss, cross_entropy_loss, loss = self.loss(pred, target)
         return {
-            'val_loss': loss,
-            'val_mse_loss': mse_loss,
-            'val_ce_loss': cross_entropy_loss,
+            "val_loss": loss,
+            "val_mse_loss": mse_loss,
+            "val_ce_loss": cross_entropy_loss,
         }
 
     def validation_epoch_end(self, outputs):
-        loss_mean = torch.stack([x['val_loss'] for x in outputs]).mean()
-        mse_loss_mean = torch.stack([x['val_mse_loss'] for x in outputs]).mean()
-        ce_loss_mean = torch.stack([x['val_ce_loss'] for x in outputs]).mean()
+        loss_mean = torch.stack([x["val_loss"] for x in outputs]).mean()
+        mse_loss_mean = torch.stack([x["val_mse_loss"] for x in outputs]).mean()
+        ce_loss_mean = torch.stack([x["val_ce_loss"] for x in outputs]).mean()
         return {
-            'log': {
-                'validation_loss': loss_mean,
-                'validation_mse_loss': mse_loss_mean,
-                'validation_ce_loss': ce_loss_mean,
+            "log": {
+                "validation_loss": loss_mean,
+                "validation_mse_loss": mse_loss_mean,
+                "validation_ce_loss": ce_loss_mean,
             },
-            'val_loss': loss_mean,
+            "val_loss": loss_mean,
         }
 
     def test_step(self, batch: DataPoint, batch_idx: int) -> Dict:
         pred, target = self.forward(*batch)
         mse_loss, cross_entropy_loss, loss = self.loss(pred, target)
         return {
-            'test_loss': loss,
-            'test_mse_loss': mse_loss,
-            'test_ce_loss': cross_entropy_loss,
+            "test_loss": loss,
+            "test_mse_loss": mse_loss,
+            "test_ce_loss": cross_entropy_loss,
         }
 
     def test_epoch_end(self, outputs):
-        loss_mean = torch.stack([x['test_loss'] for x in outputs]).mean()
-        mse_loss_mean = torch.stack([x['test_mse_loss'] for x in outputs]).mean()
-        ce_loss_mean = torch.stack([x['test_ce_loss'] for x in outputs]).mean()
+        loss_mean = torch.stack([x["test_loss"] for x in outputs]).mean()
+        mse_loss_mean = torch.stack([x["test_mse_loss"] for x in outputs]).mean()
+        ce_loss_mean = torch.stack([x["test_ce_loss"] for x in outputs]).mean()
         return {
-            'log': {
-                'test_loss': loss_mean,
-                'test_mse_loss': mse_loss_mean,
-                'test_ce_loss': ce_loss_mean,
+            "log": {
+                "test_loss": loss_mean,
+                "test_mse_loss": mse_loss_mean,
+                "test_ce_loss": ce_loss_mean,
             },
-            'val_loss': loss_mean,
+            "val_loss": loss_mean,
         }
 
     def configure_optimizers(self):
         # taken from leela zero
         # https://github.com/leela-zero/leela-zero/blob/db5569ce8d202f77154f288c21d3f2fa228f9aa3/training/tf/tfprocess.py#L190-L191
-        sgd_opt = torch.optim.SGD(self.parameters(), lr=self.hparams['learning_rate'],
-                                  momentum=0.9, nesterov=True, weight_decay=1e-4)
-        lr_sched = torch.optim.lr_scheduler.ReduceLROnPlateau(sgd_opt, verbose=True, min_lr=5e-6)
+        sgd_opt = torch.optim.SGD(
+            self.parameters(),
+            lr=self.hparams["learning_rate"],
+            momentum=0.9,
+            nesterov=True,
+            weight_decay=1e-4,
+        )
+        lr_sched = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            sgd_opt, verbose=True, min_lr=5e-6
+        )
         return [sgd_opt], [lr_sched]

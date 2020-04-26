@@ -53,12 +53,14 @@ def hex_to_ndarray(hex: str) -> np.ndarray:
     return np.packbits(np.append(bit_array, int(hex[-1])))
 
 
-def get_data_from_file(fname: str) -> Tuple[List[np.ndarray], List[int], List[np.ndarray], List[int]]:
+def get_data_from_file(
+    fname: str,
+) -> Tuple[List[np.ndarray], List[int], List[np.ndarray], List[int]]:
     stone_planes: List[np.ndarray] = []
     turn_planes: List[int] = []
     move_probs: List[np.ndarray] = []
     outcomes: List[int] = []
-    with gzip.open(fname, 'rt') as f:
+    with gzip.open(fname, "rt") as f:
         for i in cycle(range(19)):
             try:
                 line = next(f).strip()
@@ -69,7 +71,9 @@ def get_data_from_file(fname: str) -> Tuple[List[np.ndarray], List[int], List[np
             elif i == 16:
                 turn_planes.append(int(line))
             elif i == 17:
-                move_probs.append(np.array([int(p) for p in line.split()], dtype=np.uint8))
+                move_probs.append(
+                    np.array([int(p) for p in line.split()], dtype=np.uint8)
+                )
             else:
                 # i == 18
                 outcomes.append(int(line))
@@ -87,7 +91,9 @@ def transform(planes: torch.Tensor, k: int, hflip: bool) -> torch.Tensor:
     return transformed
 
 
-def transform_move_prob_plane(plane: torch.Tensor, board_size: int, k: int, hflip: bool) -> torch.Tensor:
+def transform_move_prob_plane(
+    plane: torch.Tensor, board_size: int, k: int, hflip: bool
+) -> torch.Tensor:
     """
     Transform the move prob plane. The last bit is for passing, so transform everything before that.
     """
@@ -103,7 +109,6 @@ def transform_move_prob_plane(plane: torch.Tensor, board_size: int, k: int, hfli
 
 
 class Dataset:
-
     def __init__(self, filenames: List[str], transform: bool):
         self.transform = transform
         stone_planes: List[np.ndarray] = []
@@ -118,15 +123,19 @@ class Dataset:
                 turn_planes.extend(f_turn_planes)
                 move_probs.extend(f_move_probs)
                 outcomes.extend(f_outcomes)
-        self.stone_planes = np.stack(stone_planes) if len(stone_planes) > 0 else np.empty((0, 19, 19))
+        self.stone_planes = (
+            np.stack(stone_planes) if len(stone_planes) > 0 else np.empty((0, 19, 19))
+        )
         self.turn_planes = np.array(turn_planes)
-        self.move_probs = np.stack(move_probs) if len(move_probs) > 0 else np.empty((0, 19*19+1))
+        self.move_probs = (
+            np.stack(move_probs) if len(move_probs) > 0 else np.empty((0, 19 * 19 + 1))
+        )
         self.outcomes = np.array(outcomes)
 
     def __getitem__(self, idx: int) -> DataPoint:
         # prepare the stone planes
         input_planes: List[torch.Tensor] = []
-        for plane in self.stone_planes[idx * 16: (idx + 1) * 16]:
+        for plane in self.stone_planes[idx * 16 : (idx + 1) * 16]:
             input_planes.append(stone_plane(plane))
 
         # prepare the turn planes
@@ -158,4 +167,4 @@ class Dataset:
 
     @classmethod
     def from_data_dir(cls, path: str, transform: bool = False):
-        return cls(glob.glob(os.path.join(path, '*.gz')), transform)
+        return cls(glob.glob(os.path.join(path, "*.gz")), transform)
