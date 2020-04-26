@@ -24,6 +24,9 @@ jobs:
     - name: Lint with mypy
       run: |
         mypy leela_zero_pytorch --ignore-missing-imports --follow-imports=silent --show-column-numbers
+    - name: Code formatting with black
+      run: |
+        black . --check
     - name: Test with pytest
       run: |
         pytest
