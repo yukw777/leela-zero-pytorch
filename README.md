@@ -15,7 +15,7 @@ Leela Zero comes with a tool that turns sgf files into datasets that can be fed 
 # Training
 1. Clone the repo and cd into the directory.
 1. Install `leela-zero-pytorch`, by running `pip install .` or `pip install -e .` (editable mode).
-1. Run `lzp-train`. Example: `lzp-train network=small` or `lzp-train network=huge dataset.train_dir=some/dataset/train train.gpus=1`.
+1. Run `lzp-train`. Example: `lzp-train network=small` or `lzp-train network=huge train.dataset.dir_path=some/dataset/train pl_trainer.gpus=-1`.
 1. Once the training is over, run `lzp-weights`. Example `lzp-weights path/to/checkpoint.ckpt weights.txt`.
 
 # Pretrained Weights
