@@ -3,11 +3,7 @@ import pytest
 import tempfile
 import os
 
-from pytorch_lightning import Trainer
-from torch.utils.data import DataLoader
-
-from leela_zero_pytorch.network import Network, NetworkLightningModule
-from leela_zero_pytorch.dataset import Dataset
+from leela_zero_pytorch.network import Network
 
 
 @pytest.mark.parametrize(
@@ -59,24 +55,3 @@ def test_to_leela_weights(weight_file):
             assert t1.size() == t2.size()
 
     os.remove(tmp)
-
-
-def test_train(tmp_path):
-    module = NetworkLightningModule(
-        {
-            "board_size": 19,
-            "in_channels": 18,
-            "residual_channels": 1,
-            "residual_layers": 1,
-            "learning_rate": 0.05,
-        }
-    )
-    trainer = Trainer(fast_dev_run=True, default_save_path=tmp_path)
-    train_dataset = Dataset.from_data_dir("test-data", transform=True)
-    dataset = Dataset.from_data_dir("test-data")
-    trainer.fit(
-        module,
-        train_dataloader=DataLoader(train_dataset, batch_size=2, shuffle=True),
-        val_dataloaders=DataLoader(dataset, batch_size=2),
-    )
-    trainer.test(test_dataloaders=DataLoader(dataset, batch_size=2))
