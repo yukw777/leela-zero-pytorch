@@ -1,16 +1,18 @@
 dataset:
-  train_dir: data/train
-  val_dir: data/val
-  test_dir: data/test
+  train:
+    dir_path: data/train
+    batch_size: 512
+    num_workers: 4
+  val:
+    dir_path: data/val
+    batch_size: 512
+    num_workers: 4
+  test:
+    dir_path: data/test
+    batch_size: 512
+    num_workers: 4
 
 train:
-  gpus: null
-  early_stop: false
-  run_test: false
-  batch_size: 512
-  max_epochs: 1000
   learning_rate: 0.05
-  n_data_workers: 4
-  train_percent: 1.0
-  val_percent: 1.0
-  resume_checkpoint: null
+
+pl_trainer: {}

@@ -225,10 +225,10 @@ class NetworkLightningModule(pl.LightningModule):
         super().__init__()
         self.hparams = hparams
         self.model = Network(
-            hparams["board_size"],
-            hparams["in_channels"],
-            hparams["residual_channels"],
-            hparams["residual_layers"],
+            hparams["network"]["board_size"],
+            hparams["network"]["in_channels"],
+            hparams["network"]["residual_channels"],
+            hparams["network"]["residual_layers"],
         )
 
     def forward(self, planes, target_pol, target_val):
@@ -306,7 +306,7 @@ class NetworkLightningModule(pl.LightningModule):
         # https://github.com/leela-zero/leela-zero/blob/db5569ce8d202f77154f288c21d3f2fa228f9aa3/training/tf/tfprocess.py#L190-L191
         sgd_opt = torch.optim.SGD(
             self.parameters(),
-            lr=self.hparams["learning_rate"],
+            lr=self.hparams["train"]["learning_rate"],
             momentum=0.9,
             nesterov=True,
             weight_decay=1e-4,

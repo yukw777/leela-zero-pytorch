@@ -1,0 +1,19 @@
+dataset:
+  train:
+    dir_path: tests/test-data
+    batch_size: 2
+    num_workers: 0
+  val:
+    dir_path: tests/test-data
+    batch_size: 2
+    num_workers: 0
+  test:
+    dir_path: tests/test-data
+    batch_size: 2
+    num_workers: 0
+
+train:
+  learning_rate: 0.05
+
+pl_trainer:
+  fast_dev_run: true
