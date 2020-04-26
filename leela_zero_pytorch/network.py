@@ -220,19 +220,15 @@ class Network(nn.Module):
         return " ".join([str(w) for w in t.detach().numpy().ravel()]) + "\n"
 
 
-class NetworkLightningModule(pl.LightningModule):
+class NetworkLightningModule(Network, pl.LightningModule):
     def __init__(self, hparams: Dict[str, Any]):
-        super().__init__()
-        self.hparams = hparams
-        self.model = Network(
+        super().__init__(
             hparams["network"]["board_size"],
             hparams["network"]["in_channels"],
             hparams["network"]["residual_channels"],
             hparams["network"]["residual_layers"],
         )
-
-    def forward(self, planes, target_pol, target_val):
-        return self.model(planes, target_pol, target_val)
+        self.hparams = hparams
 
     def loss(
         self,
@@ -246,7 +242,7 @@ class NetworkLightningModule(pl.LightningModule):
         return mse_loss, cross_entropy_loss, mse_loss + cross_entropy_loss
 
     def training_step(self, batch: DataPoint, batch_idx: int) -> Dict:
-        pred, target = self.forward(*batch)
+        pred, target = self(*batch)
         mse_loss, cross_entropy_loss, loss = self.loss(pred, target)
         return {
             "loss": loss,
@@ -258,7 +254,7 @@ class NetworkLightningModule(pl.LightningModule):
         }
 
     def validation_step(self, batch: DataPoint, batch_idx: int) -> Dict:
-        pred, target = self.forward(*batch)
+        pred, target = self(*batch)
         mse_loss, cross_entropy_loss, loss = self.loss(pred, target)
         return {
             "val_loss": loss,
@@ -280,7 +276,7 @@ class NetworkLightningModule(pl.LightningModule):
         }
 
     def test_step(self, batch: DataPoint, batch_idx: int) -> Dict:
-        pred, target = self.forward(*batch)
+        pred, target = self(*batch)
         mse_loss, cross_entropy_loss, loss = self.loss(pred, target)
         return {
             "test_loss": loss,

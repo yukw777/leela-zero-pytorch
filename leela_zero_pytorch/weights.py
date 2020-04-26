@@ -10,7 +10,7 @@ def main():
     args = parser.parse_args()
 
     m = NetworkLightningModule.load_from_checkpoint(args.checkpoint, map_location="cpu")
-    m.model.to_leela_weights(args.out_weight)
+    m.to_leela_weights(args.out_weight)
 
 
 if __name__ == "__main__":
