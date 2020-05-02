@@ -6,9 +6,11 @@ from leela_zero_pytorch.weights import main as weights_main
 
 def test_train(monkeypatch, tmp_path):
     monkeypatch.setattr(
-        sys, "argv", ["lzp-train", "network=tiny", f"hydra.run.dir={tmp_path}"],
+        sys,
+        "argv",
+        ["lzp-train", "network=tiny", f"pl_trainer.default_root_dir={tmp_path}"],
     )
-    train_main()
+    train_main("../tests/conf/config.yaml")
 
     monkeypatch.setattr(
         sys,
