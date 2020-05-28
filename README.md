@@ -10,7 +10,7 @@ Leela Zero comes with a tool that turns sgf files into datasets that can be fed 
 
 1. Download desired sgf files.
 1. Concatenate them into one file so that you can feed it into Leela Zero, e.g. `cat *.sgf > train.sgf`.
-1. Feed the concatenated sgf file to Leela Zero, and it will generate a bunch of gzipped files. Divide them appropriate into train, validation and test folders. The default locations are `data/train`, `data/val` and `data/test` from the root of this repo.
+1. Feed the concatenated sgf file to Leela Zero, and it will generate a bunch of gzipped files. Divide them appropriately into train, validation and test folders. The default locations are `data/train`, `data/val` and `data/test` from the root of this repo.
 
 # Training
 1. Clone the repo and cd into the directory.
