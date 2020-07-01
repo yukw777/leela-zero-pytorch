@@ -14,19 +14,19 @@ from leela_zero_pytorch.dataset import Dataset
 logger = logging.getLogger(__name__)
 
 
-def main(config_file: str):
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("overrides", nargs="*", default=[])
     args = parser.parse_args()
 
-    parsed = Path(config_file)
+    parsed = Path("conf/config.yaml")
     initialize(config_dir=str(parsed.parent), strict=False)
     cfg = compose(parsed.name, overrides=args.overrides)
     logger.info(f"Training with the following config:\n{cfg.pretty()}")
 
     # we want to pass in dictionaries as OmegaConf doesn't play nicely with
     # loggers and doesn't allow non-native types
-    module = NetworkLightningModule(OmegaConf.to_container(cfg, resolve=True))
+    module = NetworkLightningModule(OmegaConf.to_container(cfg.train, resolve=True))
     trainer = Trainer(**OmegaConf.to_container(cfg.pl_trainer, resolve=True))
     trainer.fit(
         module,
@@ -53,4 +53,4 @@ def main(config_file: str):
 
 
 if __name__ == "__main__":
-    main("conf/config.yaml")
+    main()

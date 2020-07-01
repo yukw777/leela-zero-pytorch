@@ -8,9 +8,20 @@ def test_train(monkeypatch, tmp_path):
     monkeypatch.setattr(
         sys,
         "argv",
-        ["lzp-train", "network=tiny", f"pl_trainer.default_root_dir={tmp_path}"],
+        [
+            "lzp-train",
+            "network=small",
+            "dataset.train.dir_path=tests/test-data",
+            "dataset.train.batch_size=2",
+            "dataset.val.dir_path=tests/test-data",
+            "dataset.val.batch_size=2",
+            "dataset.test.dir_path=tests/test-data",
+            "dataset.test.batch_size=2",
+            f"pl_trainer.default_root_dir={tmp_path}",
+            "pl_trainer.fast_dev_run=true",
+        ],
     )
-    train_main("../tests/conf/config.yaml")
+    train_main()
 
     monkeypatch.setattr(
         sys,

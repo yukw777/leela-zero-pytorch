@@ -1,5 +1,4 @@
-network:
-  board_size: 19
-  in_channels: 18
-  residual_channels: 32
-  residual_layers: 8
+train:
+  network:
+    residual_channels: 32
+    residual_layers: 8

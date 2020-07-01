@@ -13,6 +13,9 @@ dataset:
     num_workers: 4
 
 train:
+  network:
+    board_size: 19
+    in_channels: 18
   learning_rate: 0.05
 
 pl_trainer: {}
