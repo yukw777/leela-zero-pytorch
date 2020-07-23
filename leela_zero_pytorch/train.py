@@ -6,6 +6,7 @@ from omegaconf import OmegaConf
 from pytorch_lightning import Trainer
 from torch.utils.data import DataLoader
 from hydra.experimental import compose, initialize
+from hydra.utils import instantiate
 
 from leela_zero_pytorch.network import NetworkLightningModule
 from leela_zero_pytorch.dataset import Dataset
@@ -14,7 +15,7 @@ from leela_zero_pytorch.dataset import Dataset
 logger = logging.getLogger(__name__)
 
 
-def main():
+def main() -> Trainer:
     parser = argparse.ArgumentParser()
     parser.add_argument("overrides", nargs="*", default=[])
     args = parser.parse_args()
@@ -27,7 +28,8 @@ def main():
     # we want to pass in dictionaries as OmegaConf doesn't play nicely with
     # loggers and doesn't allow non-native types
     module = NetworkLightningModule(OmegaConf.to_container(cfg.train, resolve=True))
-    trainer = Trainer(**OmegaConf.to_container(cfg.pl_trainer, resolve=True))
+    trainer_logger = instantiate(cfg.logger) if cfg.logger is not None else True
+    trainer = Trainer(**cfg.pl_trainer, logger=trainer_logger)
     trainer.fit(
         module,
         train_dataloader=DataLoader(
@@ -50,6 +52,8 @@ def main():
                 num_workers=cfg.dataset.test.num_workers,
             )
         )
+
+    return trainer
 
 
 if __name__ == "__main__":

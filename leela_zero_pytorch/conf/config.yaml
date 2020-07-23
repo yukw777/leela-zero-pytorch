@@ -19,3 +19,6 @@ train:
   learning_rate: 0.05
 
 pl_trainer: {}
+
+defaults:
+  - logger: wandb

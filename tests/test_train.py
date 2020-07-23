@@ -1,10 +1,16 @@
+import pytest
 import sys
+
+from pytorch_lightning.loggers import TensorBoardLogger, WandbLogger
 
 from leela_zero_pytorch.train import main as train_main
 from leela_zero_pytorch.weights import main as weights_main
 
 
-def test_train(monkeypatch, tmp_path):
+@pytest.mark.parametrize(
+    "logger", [[], ["logger=wandb", "logger.params.offline=true"]],
+)
+def test_train(monkeypatch, tmp_path, capsys, clear_hydra, logger):
     monkeypatch.setattr(
         sys,
         "argv",
@@ -19,17 +25,23 @@ def test_train(monkeypatch, tmp_path):
             "dataset.test.batch_size=2",
             f"pl_trainer.default_root_dir={tmp_path}",
             "pl_trainer.fast_dev_run=true",
-        ],
+        ]
+        + logger
+        + ([f"logger.params.save_dir={tmp_path}"] if len(logger) > 0 else []),
     )
-    train_main()
+    with capsys.disabled():
+        trainer = train_main()
+
+    checkpoint_path = "checkpoints/epoch=0.ckpt"
+    if isinstance(trainer.logger, TensorBoardLogger):
+        checkpoint_path = f"{trainer.logger.log_dir}/{checkpoint_path}"
+    elif isinstance(trainer.logger, WandbLogger):
+        checkpoint_path = (
+            f"{tmp_path}/{trainer.logger.name}/"
+            f"{trainer.logger.version}/{checkpoint_path}"
+        )
 
     monkeypatch.setattr(
-        sys,
-        "argv",
-        [
-            "lzp-weights",
-            f"{tmp_path}/lightning_logs/version_0/checkpoints/epoch=0.ckpt",
-            f"{tmp_path}/weights.txt",
-        ],
+        sys, "argv", ["lzp-weights", checkpoint_path, f"{tmp_path}/weights.txt"],
     )
     weights_main()

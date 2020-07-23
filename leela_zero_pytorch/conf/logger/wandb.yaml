@@ -1,0 +1,3 @@
+logger:
+  class: pytorch_lightning.loggers.WandbLogger
+  params: {}
