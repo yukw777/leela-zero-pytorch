@@ -1,3 +1,4 @@
+# @package _global_
 logger:
-  class: pytorch_lightning.loggers.WandbLogger
+  target: pytorch_lightning.loggers.WandbLogger
   params: {}

@@ -1,3 +1,4 @@
+# @package _global_
 train:
   network:
     residual_channels: 32
