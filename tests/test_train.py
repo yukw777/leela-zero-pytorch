@@ -30,6 +30,8 @@ def test_train(monkeypatch, tmp_path, capsys, clear_hydra, logger):
         + ([f"logger.params.save_dir={tmp_path}"] if len(logger) > 0 else []),
     )
     with capsys.disabled():
+        # both pytest and wandb capture stdout, and they cause
+        # a deadlock, so don't capture when running the trainer
         trainer = train_main()
 
     checkpoint_path = "checkpoints/epoch=0.ckpt"
