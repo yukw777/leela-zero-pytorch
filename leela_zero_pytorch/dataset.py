@@ -7,7 +7,7 @@ import gzip
 import random
 import bisect
 
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +88,7 @@ class Dataset:
         self.filenames = filenames
         self.transform = transform
         self._build_item_positions()
+        self.file_handlers: Optional[List] = None
 
     def _build_item_positions(self):
         """
@@ -112,32 +113,34 @@ class Dataset:
             self.breakpoints.append(count)
 
     def __getitem__(self, idx: int) -> DataPoint:
+        if self.file_handlers is None:
+            self.file_handlers = [gzip.open(fname, "rt") for fname in self.filenames]
         # find the right file for the idx
         file_idx = bisect.bisect(self.breakpoints, idx)
-        with gzip.open(self.filenames[file_idx], "rt") as fileh:
-            # find the position within the file
-            in_file_idx = idx if file_idx == 0 else idx - self.breakpoints[file_idx - 1]
+        fileh = self.file_handlers[file_idx]
+        # find the position within the file
+        in_file_idx = idx if file_idx == 0 else idx - self.breakpoints[file_idx - 1]
 
-            # prepare the input planes
-            input_planes: List[torch.Tensor] = []
-            fileh.seek(self.file_positions[file_idx][in_file_idx])
-            for i in range(19):
-                line = fileh.readline().strip()
-                if i < 16:
-                    # prepare the stone planes
-                    input_planes.append(stone_plane(hex_to_ndarray(line)))
-                elif i == 16:
-                    # prepare the turn planes
-                    input_planes.extend(turn_plane(int(line)))
-                elif i == 17:
-                    # move probabilities
-                    move_probs = torch.from_numpy(
-                        np.array([int(p) for p in line.split()], dtype=np.uint8)
-                    )
-                else:
-                    # i == 18
-                    # outcome
-                    outcome = torch.tensor(int(line)).float()
+        # prepare the input planes
+        input_planes: List[torch.Tensor] = []
+        fileh.seek(self.file_positions[file_idx][in_file_idx])
+        for i in range(19):
+            line = fileh.readline().strip()
+            if i < 16:
+                # prepare the stone planes
+                input_planes.append(stone_plane(hex_to_ndarray(line)))
+            elif i == 16:
+                # prepare the turn planes
+                input_planes.extend(turn_plane(int(line)))
+            elif i == 17:
+                # move probabilities
+                move_probs = torch.from_numpy(
+                    np.array([int(p) for p in line.split()], dtype=np.uint8)
+                )
+            else:
+                # i == 18
+                # outcome
+                outcome = torch.tensor(int(line)).float()
 
         # stack all the planes
         stacked_input = torch.stack(input_planes)
