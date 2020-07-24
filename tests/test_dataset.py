@@ -1,6 +1,5 @@
 import pytest
 import torch
-import random
 
 from typing import List
 
@@ -113,21 +112,23 @@ def test_turn_plane(turn: int, planes: List[torch.Tensor]):
 @pytest.mark.parametrize(
     "filenames,length",
     (
-        (["tests/test-data/kgs.0.gz"], 6366),
-        (["tests/test-data/kgs.1.gz"], 6658),
-        (["tests/test-data/kgs.0.gz", "tests/test-data/kgs.1.gz"], 13024),
+        (["tests/test-data/kgs.0.gz"], 2),
+        (["tests/test-data/kgs.1.gz"], 3),
+        (["tests/test-data/kgs.0.gz", "tests/test-data/kgs.1.gz"], 5),
     ),
 )
 def test_go_dataset(filenames: List[str], length: int, transform: bool):
-    view = Dataset(filenames, transform)
-    assert len(view) == length
-    random_idx = random.randrange(0, len(view))
+    dataset = Dataset(filenames, transform)
+    assert len(dataset) == length
+    assert len(dataset.breakpoints) == len(filenames)
+    assert len(dataset.breakpoints) == len(dataset.file_positions)
 
-    planes, moves, outcome = view[random_idx]
-    assert planes.size() == (18, 19, 19)
-    assert moves.item() in list(range(19 * 19 + 1))
-    assert moves.dtype == torch.int64
-    assert outcome.item() in (-1, 1)
+    for idx in range(len(dataset)):
+        planes, moves, outcome = dataset[idx]
+        assert planes.size() == (18, 19, 19)
+        assert moves.item() in list(range(19 * 19 + 1))
+        assert moves.dtype == torch.int64
+        assert outcome.item() in (-1, 1)
 
 
 @pytest.mark.parametrize(

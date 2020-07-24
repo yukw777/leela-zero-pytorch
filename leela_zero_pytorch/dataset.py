@@ -5,10 +5,9 @@ import torch
 import numpy as np
 import gzip
 import random
+import bisect
 
 from typing import Tuple, List
-from itertools import cycle
-from concurrent.futures import ProcessPoolExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -54,33 +53,6 @@ def hex_to_ndarray(hex: str) -> np.ndarray:
     return np.packbits(np.append(bit_array, int(hex[-1])))
 
 
-def get_data_from_file(
-    fname: str,
-) -> Tuple[List[np.ndarray], List[int], List[np.ndarray], List[int]]:
-    stone_planes: List[np.ndarray] = []
-    turn_planes: List[int] = []
-    move_probs: List[np.ndarray] = []
-    outcomes: List[int] = []
-    with gzip.open(fname, "rt") as f:
-        for i in cycle(range(19)):
-            try:
-                line = next(f).strip()
-            except StopIteration:
-                break
-            if i < 16:
-                stone_planes.append(hex_to_ndarray(line))
-            elif i == 16:
-                turn_planes.append(int(line))
-            elif i == 17:
-                move_probs.append(
-                    np.array([int(p) for p in line.split()], dtype=np.uint8)
-                )
-            else:
-                # i == 18
-                outcomes.append(int(line))
-    return stone_planes, turn_planes, move_probs, outcomes
-
-
 def transform(planes: torch.Tensor, k: int, hflip: bool) -> torch.Tensor:
     """
     Rotate the planes 90 degrees `k` times and flip them horizontally if `hflip`
@@ -113,42 +85,62 @@ def transform_move_prob_plane(
 
 class Dataset:
     def __init__(self, filenames: List[str], transform: bool):
+        self.filenames = filenames
         self.transform = transform
-        stone_planes: List[np.ndarray] = []
-        turn_planes: List[int] = []
-        move_probs: List[np.ndarray] = []
-        outcomes: List[int] = []
-        self.raw_datapoints: List[List[str]] = []
-        with ProcessPoolExecutor() as executor:
-            for data in executor.map(get_data_from_file, filenames):
-                f_stone_planes, f_turn_planes, f_move_probs, f_outcomes = data
-                stone_planes.extend(f_stone_planes)
-                turn_planes.extend(f_turn_planes)
-                move_probs.extend(f_move_probs)
-                outcomes.extend(f_outcomes)
-        self.stone_planes = (
-            np.stack(stone_planes) if len(stone_planes) > 0 else np.empty((0, 19, 19))
-        )
-        self.turn_planes = np.array(turn_planes)
-        self.move_probs = (
-            np.stack(move_probs) if len(move_probs) > 0 else np.empty((0, 19 * 19 + 1))
-        )
-        self.outcomes = np.array(outcomes)
+        self._build_item_positions()
+
+    def _build_item_positions(self):
+        """
+        Calculate the file breakpoints (how many items per file) and
+        the file position for each item within a file.
+        """
+        self.breakpoints: List[int] = []
+        self.file_positions: List[List[int]] = []
+        count = 0
+        for fname in self.filenames:
+            with gzip.open(fname, "rt") as fileh:
+                positions = []
+                while True:
+                    position = fileh.tell()
+                    for _ in range(19):
+                        line = fileh.readline()
+                    if len(line) == 0:
+                        break
+                    positions.append(position)
+                    count += 1
+            self.file_positions.append(positions)
+            self.breakpoints.append(count)
 
     def __getitem__(self, idx: int) -> DataPoint:
-        # prepare the stone planes
-        input_planes: List[torch.Tensor] = []
-        for plane in self.stone_planes[idx * 16 : (idx + 1) * 16]:
-            input_planes.append(stone_plane(plane))
+        # find the right file for the idx
+        file_idx = bisect.bisect(self.breakpoints, idx)
+        with gzip.open(self.filenames[file_idx], "rt") as fileh:
+            # find the position within the file
+            in_file_idx = idx if file_idx == 0 else idx - self.breakpoints[file_idx - 1]
 
-        # prepare the turn planes
-        input_planes.extend(turn_plane(self.turn_planes[idx]))
+            # prepare the input planes
+            input_planes: List[torch.Tensor] = []
+            fileh.seek(self.file_positions[file_idx][in_file_idx])
+            for i in range(19):
+                line = fileh.readline().strip()
+                if i < 16:
+                    # prepare the stone planes
+                    input_planes.append(stone_plane(hex_to_ndarray(line)))
+                elif i == 16:
+                    # prepare the turn planes
+                    input_planes.extend(turn_plane(int(line)))
+                elif i == 17:
+                    # move probabilities
+                    move_probs = torch.from_numpy(
+                        np.array([int(p) for p in line.split()], dtype=np.uint8)
+                    )
+                else:
+                    # i == 18
+                    # outcome
+                    outcome = torch.tensor(int(line)).float()
 
         # stack all the planes
         stacked_input = torch.stack(input_planes)
-
-        # prepare the move probs
-        move_probs = torch.from_numpy(self.move_probs[idx])
 
         if self.transform:
             # transform for data augmentation
@@ -162,11 +154,11 @@ class Dataset:
         return (
             stacked_input,
             move_probs.argmax(),
-            torch.tensor(self.outcomes[idx]).float(),
+            outcome,
         )
 
     def __len__(self):
-        return len(self.outcomes)
+        return self.breakpoints[-1] if len(self.breakpoints) > 0 else 0
 
     @classmethod
     def from_data_dir(cls, path: str, transform: bool = False):
