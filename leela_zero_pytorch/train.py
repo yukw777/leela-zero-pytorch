@@ -17,9 +17,7 @@ logger = logging.getLogger(__name__)
 def main(cfg: DictConfig) -> Trainer:
     logger.info(f"Training with the following config:\n{cfg.pretty()}")
 
-    # we want to pass in dictionaries as OmegaConf doesn't play nicely with
-    # loggers and doesn't allow non-native types
-    module = NetworkLightningModule(cfg.train)
+    module = NetworkLightningModule(cfg.network, cfg.train)
     trainer_logger = instantiate(cfg.logger) if "logger" in cfg else True
     trainer = Trainer(**cfg.pl_trainer, logger=trainer_logger)
     trainer.fit(

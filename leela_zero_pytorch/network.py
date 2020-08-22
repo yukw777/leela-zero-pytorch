@@ -3,7 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 
-from typing import Dict, Tuple, Any
+from typing import Dict, Tuple
+from omegaconf import DictConfig
 
 from leela_zero_pytorch.dataset import DataPoint
 
@@ -221,14 +222,9 @@ class Network(nn.Module):
 
 
 class NetworkLightningModule(Network, pl.LightningModule):
-    def __init__(self, conf: Dict[str, Any]):
-        super().__init__(
-            conf["network"]["board_size"],
-            conf["network"]["in_channels"],
-            conf["network"]["residual_channels"],
-            conf["network"]["residual_layers"],
-        )
-        self.save_hyperparameters(conf)  # type: ignore
+    def __init__(self, network_conf: DictConfig, train_conf: DictConfig):
+        super().__init__(**network_conf)
+        self.save_hyperparameters()  # type: ignore
 
     def loss(
         self,
@@ -302,7 +298,7 @@ class NetworkLightningModule(Network, pl.LightningModule):
         # https://github.com/leela-zero/leela-zero/blob/db5569ce8d202f77154f288c21d3f2fa228f9aa3/training/tf/tfprocess.py#L190-L191
         sgd_opt = torch.optim.SGD(
             self.parameters(),
-            lr=self.hparams["learning_rate"],
+            lr=self.hparams.train_conf.learning_rate,
             momentum=0.9,
             nesterov=True,
             weight_decay=1e-4,

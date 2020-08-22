@@ -1,5 +1,3 @@
-# @package _global_
-train:
-  network:
-    residual_channels: 128
-    residual_layers: 20
+# @package _group_
+residual_channels: 128
+residual_layers: 20

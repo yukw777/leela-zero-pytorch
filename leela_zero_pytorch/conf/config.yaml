@@ -12,10 +12,11 @@ dataset:
     batch_size: 512
     num_workers: 4
 
+network:
+  board_size: 19
+  in_channels: 18
+
 train:
-  network:
-    board_size: 19
-    in_channels: 18
   learning_rate: 0.05
   run_test: false
 

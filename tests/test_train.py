@@ -32,8 +32,8 @@ def test_train(monkeypatch, tmp_path, capsys, logger):
         if len(logger) == 0:
             # default wandb logger
             with open_dict(cfg):
-                cfg.logger.params.offline = True
-                cfg.logger.params.save_dir = str(tmp_path)
+                cfg.logger.offline = True
+                cfg.logger.save_dir = str(tmp_path)
         with capsys.disabled():
             # both pytest and wandb capture stdout, and they cause
             # a deadlock, so don't capture when running the trainer

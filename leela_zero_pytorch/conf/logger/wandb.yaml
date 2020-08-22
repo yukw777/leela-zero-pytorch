@@ -1,4 +1,2 @@
-# @package _global_
-logger:
-  target: pytorch_lightning.loggers.WandbLogger
-  params: {}
+# @package _group_
+_target_: pytorch_lightning.loggers.WandbLogger
