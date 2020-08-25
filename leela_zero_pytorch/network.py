@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 
-from typing import Dict, Tuple
+from typing import Tuple
 from omegaconf import DictConfig
 from pytorch_lightning.metrics.functional import accuracy
 
@@ -238,77 +238,51 @@ class NetworkLightningModule(Network, pl.LightningModule):
         mse_loss = F.mse_loss(pred_val.squeeze(), target_val)
         return mse_loss, cross_entropy_loss, mse_loss + cross_entropy_loss
 
-    def training_step(self, batch: DataPoint, batch_idx: int) -> Dict:
+    def training_step(self, batch: DataPoint, batch_idx: int) -> pl.TrainResult:
         planes, target_move, target_val = batch
         pred_move, pred_val = self(planes)
         mse_loss, cross_entropy_loss, loss = self.loss(
             pred_move, pred_val, target_move, target_val
         )
-        return {
-            "loss": loss,
-            "log": {
-                "training_loss": loss,
-                "training_mse_loss": mse_loss,
-                "training_ce_loss": cross_entropy_loss,
-                "training_accuracy": accuracy(pred_move, target_move),
-            },
-        }
+        result = pl.TrainResult(minimize=loss)
+        result.log("train_loss", loss, prog_bar=True)
+        result.log_dict(
+            {
+                "train_mse_loss": mse_loss,
+                "train_ce_loss": cross_entropy_loss,
+                "train_acc": accuracy(pred_move, target_move),
+            }
+        )
+        return result
 
-    def validation_step(self, batch: DataPoint, batch_idx: int) -> Dict:
+    def validation_step(self, batch: DataPoint, batch_idx: int) -> pl.EvalResult:
         planes, target_move, target_val = batch
         pred_move, pred_val = self(planes)
         mse_loss, cross_entropy_loss, loss = self.loss(
             pred_move, pred_val, target_move, target_val
         )
-        return {
-            "val_loss": loss,
-            "val_mse_loss": mse_loss,
-            "val_ce_loss": cross_entropy_loss,
-            "val_accuracy": accuracy(pred_move, target_move),
-        }
-
-    def validation_epoch_end(self, outputs):
-        loss_mean = torch.stack([x["val_loss"] for x in outputs]).mean()
-        mse_loss_mean = torch.stack([x["val_mse_loss"] for x in outputs]).mean()
-        ce_loss_mean = torch.stack([x["val_ce_loss"] for x in outputs]).mean()
-        accuracy_mean = torch.stack([x["val_accuracy"] for x in outputs]).mean()
-        return {
-            "log": {
-                "validation_loss": loss_mean,
-                "validation_mse_loss": mse_loss_mean,
-                "validation_ce_loss": ce_loss_mean,
-                "validation_accuracy": accuracy_mean,
-            },
-            "val_loss": loss_mean,
-        }
-
-    def test_step(self, batch: DataPoint, batch_idx: int) -> Dict:
-        planes, target_move, target_val = batch
-        pred_move, pred_val = self(planes)
-        mse_loss, cross_entropy_loss, loss = self.loss(
-            pred_move, pred_val, target_move, target_val
+        result = pl.EvalResult(checkpoint_on=loss)
+        result.log_dict(
+            {
+                "val_loss": loss,
+                "val_mse_loss": mse_loss,
+                "val_ce_loss": cross_entropy_loss,
+                "val_acc": accuracy(pred_move, target_move),
+            }
         )
-        return {
-            "test_loss": loss,
-            "test_mse_loss": mse_loss,
-            "test_ce_loss": cross_entropy_loss,
-            "test_accuracy": accuracy(pred_move, target_move),
-        }
+        return result
 
-    def test_epoch_end(self, outputs):
-        loss_mean = torch.stack([x["test_loss"] for x in outputs]).mean()
-        mse_loss_mean = torch.stack([x["test_mse_loss"] for x in outputs]).mean()
-        ce_loss_mean = torch.stack([x["test_ce_loss"] for x in outputs]).mean()
-        accuracy_mean = torch.stack([x["test_accuracy"] for x in outputs]).mean()
-        return {
-            "log": {
-                "test_loss": loss_mean,
-                "test_mse_loss": mse_loss_mean,
-                "test_ce_loss": ce_loss_mean,
-                "test_accuracy": accuracy_mean,
-            },
-            "val_loss": loss_mean,
-        }
+    def test_step(self, batch: DataPoint, batch_idx: int) -> pl.EvalResult:
+        result = self.validation_step(batch, batch_idx)
+        result.rename_keys(
+            {
+                "val_loss": "test_loss",
+                "val_mse_loss": "test_mse_loss",
+                "val_ce_loss": "test_ce_loss",
+                "val_acc": "test_acc",
+            }
+        )
+        return result
 
     def configure_optimizers(self):
         # taken from leela zero
@@ -320,7 +294,12 @@ class NetworkLightningModule(Network, pl.LightningModule):
             nesterov=True,
             weight_decay=1e-4,
         )
-        lr_sched = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            sgd_opt, verbose=True, min_lr=5e-6
-        )
+        lr_sched = {
+            "scheduler": torch.optim.lr_scheduler.ReduceLROnPlateau(
+                sgd_opt, verbose=True, min_lr=5e-6
+            ),
+            "reduce_on_plateau": True,
+            # val_checkpoint_on is val_loss passed in as checkpoint_on
+            "monitor": "val_checkpoint_on",
+        }
         return [sgd_opt], [lr_sched]
