@@ -28,14 +28,14 @@ def main(cfg: DictConfig) -> Trainer:
             ),
             shuffle=True,
             batch_size=cfg.dataset.train.batch_size,
-            # num_workers=cfg.dataset.train.num_workers,
+            num_workers=cfg.dataset.train.num_workers,
         ),
         val_dataloaders=DataLoader(
             Dataset.from_data_dir(
                 hydra.utils.to_absolute_path(cfg.dataset.val.dir_path)
             ),
             batch_size=cfg.dataset.val.batch_size,
-            # num_workers=cfg.dataset.val.num_workers,
+            num_workers=cfg.dataset.val.num_workers,
         ),
     )
     if cfg.train.run_test:
@@ -45,7 +45,7 @@ def main(cfg: DictConfig) -> Trainer:
                     hydra.utils.to_absolute_path(cfg.dataset.test.dir_path)
                 ),
                 batch_size=cfg.dataset.train.batch_size,
-                # num_workers=cfg.dataset.test.num_workers,
+                num_workers=cfg.dataset.test.num_workers,
             )
         )
 
