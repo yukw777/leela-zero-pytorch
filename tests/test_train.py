@@ -18,12 +18,12 @@ def test_train(monkeypatch, tmp_path, capsys, logger):
             config_name="config",
             overrides=[
                 "+network=small",
-                "dataset.train.dir_path=tests/test-data",
-                "dataset.train.batch_size=2",
-                "dataset.val.dir_path=tests/test-data",
-                "dataset.val.batch_size=2",
-                "dataset.test.dir_path=tests/test-data",
-                "dataset.test.batch_size=2",
+                "data.train_data_dir=tests/test-data",
+                "data.train_dataloader_conf.batch_size=2",
+                "data.val_data_dir=tests/test-data",
+                "data.val_dataloader_conf.batch_size=2",
+                "data.test_data_dir=tests/test-data",
+                "data.test_dataloader_conf.batch_size=2",
                 f"+pl_trainer.default_root_dir={tmp_path}",
                 "+pl_trainer.fast_dev_run=true",
             ]

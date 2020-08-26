@@ -10,6 +10,7 @@ from leela_zero_pytorch.dataset import (
     hex_to_ndarray,
     transform,
     transform_move_prob_plane,
+    DataModule,
 )
 
 
@@ -126,6 +127,7 @@ def test_go_dataset(filenames: List[str], length: int, transform: bool):
         assert moves.item() in list(range(19 * 19 + 1))
         assert moves.dtype == torch.int64
         assert outcome.item() in (-1, 1)
+        assert outcome.dtype == torch.float32
 
 
 @pytest.mark.parametrize(
@@ -268,3 +270,18 @@ def test_transform(planes, k, hflip, transformed):
 )
 def test_transform_move_prob_plane(plane, k, hflip, transformed):
     assert transform_move_prob_plane(plane, 3, k, hflip).equal(transformed)
+
+
+def test_data_module():
+    dm = DataModule("tests/test-data", "tests/test-data", "tests/test-data")
+    dm.prepare_data()
+    dm.setup()
+
+    for item in dm.train_dataloader():
+        planes, move_probs, game_outcome = item
+
+        assert planes.size() == (1, 18, 19, 19)
+        assert move_probs.item() in list(range(19 * 19 + 1))
+        assert move_probs.dtype == torch.int64
+        assert game_outcome.item() in (-1, 1)
+        assert game_outcome.dtype == torch.float32

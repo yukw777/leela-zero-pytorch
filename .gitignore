@@ -108,7 +108,7 @@ venv-2.7/
 .vscode/
 
 # data
-data/
+/data/
 
 # pytorch lightning
 lightning_logs/

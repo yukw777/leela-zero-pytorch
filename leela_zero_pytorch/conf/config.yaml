@@ -1,17 +1,3 @@
-dataset:
-  train:
-    dir_path: data/train
-    batch_size: 512
-    num_workers: 4
-  val:
-    dir_path: data/val
-    batch_size: 512
-    num_workers: 4
-  test:
-    dir_path: data/test
-    batch_size: 512
-    num_workers: 4
-
 network:
   board_size: 19
   in_channels: 18
@@ -24,3 +10,4 @@ pl_trainer: {}
 
 defaults:
   - logger: wandb
+  - data: leela-zero

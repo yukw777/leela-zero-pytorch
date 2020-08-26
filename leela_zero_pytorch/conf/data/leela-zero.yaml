@@ -1,0 +1,14 @@
+# @package _group_
+_target_: leela_zero_pytorch.dataset.DataModule
+train_data_dir: data/train
+val_data_dir: data/val
+test_data_dir: data/test
+train_dataloader_conf:
+  batch_size: 512
+  num_workers: 4
+val_dataloader_conf:
+  batch_size: 512
+  num_workers: 4
+test_dataloader_conf:
+  batch_size: 512
+  num_workers: 4

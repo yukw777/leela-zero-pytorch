@@ -5,10 +5,14 @@ import torch
 import numpy as np
 import gzip
 import random
+import pytorch_lightning as pl
 
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 from itertools import cycle
 from concurrent.futures import ProcessPoolExecutor
+from torch.utils.data import DataLoader
+from omegaconf import DictConfig, OmegaConf
+from hydra.utils import to_absolute_path
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +116,7 @@ def transform_move_prob_plane(
 
 
 class Dataset:
-    def __init__(self, filenames: List[str], transform: bool):
+    def __init__(self, filenames: List[str], transform: bool = False):
         self.transform = transform
         stone_planes: List[np.ndarray] = []
         turn_planes: List[int] = []
@@ -168,6 +172,46 @@ class Dataset:
     def __len__(self):
         return len(self.outcomes)
 
-    @classmethod
-    def from_data_dir(cls, path: str, transform: bool = False):
-        return cls(glob.glob(os.path.join(path, "*.gz")), transform)
+
+class DataModule(pl.LightningDataModule):
+    def __init__(
+        self,
+        train_data_dir: str,
+        val_data_dir: str,
+        test_data_dir: str,
+        train_dataloader_conf: Optional[DictConfig] = None,
+        val_dataloader_conf: Optional[DictConfig] = None,
+        test_dataloader_conf: Optional[DictConfig] = None,
+    ):
+        super().__init__()
+        self.train_filenames = glob.glob(
+            os.path.join(to_absolute_path(train_data_dir), "*.gz")
+        )
+        self.val_filenames = glob.glob(
+            os.path.join(to_absolute_path(val_data_dir), "*.gz")
+        )
+        self.test_filenames = glob.glob(
+            os.path.join(to_absolute_path(test_data_dir), "*.gz")
+        )
+
+        self.train_dataloader_conf = train_dataloader_conf or OmegaConf.create()
+        self.val_dataloader_conf = val_dataloader_conf or OmegaConf.create()
+        self.test_dataloader_conf = test_dataloader_conf or OmegaConf.create()
+
+    # no need for prepare_data
+    def setup(self, stage: Optional[str] = None):
+        if stage == "fit" or stage is None:
+            self.train = Dataset(self.train_filenames, transform=True)
+            self.val = Dataset(self.val_filenames)
+
+        if stage == "test" or stage is None:
+            self.test = Dataset(self.test_filenames)
+
+    def train_dataloader(self):
+        return DataLoader(self.train, **self.train_dataloader_conf)
+
+    def val_dataloader(self):
+        return DataLoader(self.val, **self.val_dataloader_conf)
+
+    def test_dataloader(self):
+        return DataLoader(self.test, **self.test_dataloader_conf)
