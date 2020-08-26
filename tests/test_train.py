@@ -10,7 +10,8 @@ from leela_zero_pytorch.weights import main as weights_main
 
 
 @pytest.mark.parametrize(
-    "logger", [[], ["logger=null"]],
+    "logger",
+    [[], ["logger=null"]],
 )
 def test_train(monkeypatch, tmp_path, capsys, logger):
     with initialize(config_path="../leela_zero_pytorch/conf"):
@@ -49,6 +50,8 @@ def test_train(monkeypatch, tmp_path, capsys, logger):
         )
 
     monkeypatch.setattr(
-        sys, "argv", ["lzp-weights", checkpoint_path, f"{tmp_path}/weights.txt"],
+        sys,
+        "argv",
+        ["lzp-weights", checkpoint_path, f"{tmp_path}/weights.txt"],
     )
     weights_main()
