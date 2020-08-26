@@ -15,5 +15,6 @@ data:
     num_workers: 4
 
 network:
-  board_size: 19
-  in_channels: 18
+  network_conf:
+    board_size: 19
+    in_channels: 18

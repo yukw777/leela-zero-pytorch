@@ -11,9 +11,9 @@ from leela_zero_pytorch.weights import main as weights_main
 
 @pytest.mark.parametrize(
     "logger",
-    [[], ["logger=null"]],
+    [[], ["~logger"]],
 )
-def test_train(monkeypatch, tmp_path, capsys, logger):
+def test_train_logger(monkeypatch, tmp_path, capsys, logger):
     with initialize(config_path="../leela_zero_pytorch/conf"):
         cfg = compose(
             config_name="config",
@@ -48,6 +48,39 @@ def test_train(monkeypatch, tmp_path, capsys, logger):
             f"{tmp_path}/{trainer.logger.name}/"
             f"{trainer.logger.version}/{checkpoint_path}"
         )
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["lzp-weights", checkpoint_path, f"{tmp_path}/weights.txt"],
+    )
+    weights_main()
+
+
+@pytest.mark.parametrize("network_size", ["small", "big", "huge"])
+def test_train_network_size(monkeypatch, tmp_path, capsys, network_size):
+    with initialize(config_path="../leela_zero_pytorch/conf"):
+        cfg = compose(
+            config_name="config",
+            overrides=[
+                f"+network={network_size}",
+                "data.train_data_dir=tests/test-data",
+                "data.train_dataloader_conf.batch_size=2",
+                "data.val_data_dir=tests/test-data",
+                "data.val_dataloader_conf.batch_size=2",
+                "data.test_data_dir=tests/test-data",
+                "data.test_dataloader_conf.batch_size=2",
+                f"+pl_trainer.default_root_dir={tmp_path}",
+                "+pl_trainer.fast_dev_run=true",
+                "~logger",
+            ],
+        )
+        with capsys.disabled():
+            # both pytest and wandb capture stdout, and they cause
+            # a deadlock, so don't capture when running the trainer
+            trainer = train_main(cfg)
+
+    checkpoint_path = f"{trainer.logger.log_dir}/checkpoints/epoch=0.ckpt"
 
     monkeypatch.setattr(
         sys,

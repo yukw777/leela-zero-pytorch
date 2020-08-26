@@ -223,7 +223,13 @@ class Network(nn.Module):
 
 
 class NetworkLightningModule(Network, pl.LightningModule):
-    def __init__(self, network_conf: DictConfig, train_conf: DictConfig):
+    def __init__(
+        self,
+        train_conf: DictConfig,
+        # network_conf is passed in as a kwarg by Hydra's instantiate(),
+        # so it needs to come last
+        network_conf: DictConfig,
+    ):
         super().__init__(**network_conf)
         self.save_hyperparameters()  # type: ignore
 
