@@ -1,7 +1,7 @@
 import logging
 import hydra
 
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import Trainer
 from hydra.utils import instantiate
 
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 @hydra.main(config_path="conf", config_name="config")
 def main(cfg: DictConfig) -> Trainer:
-    logger.info(f"Training with the following config:\n{cfg.pretty()}")
+    logger.info(f"Training with the following config:\n{OmegaConf.to_yaml(cfg)}")
 
     network = instantiate(cfg.network, cfg.train)
     data = instantiate(cfg.data)
