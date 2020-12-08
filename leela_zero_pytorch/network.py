@@ -222,7 +222,7 @@ class Network(nn.Module):
         return " ".join([str(w) for w in t.detach().numpy().ravel()]) + "\n"
 
 
-class NetworkLightningModule(Network, pl.LightningModule):
+class NetworkLightningModule(Network, pl.LightningModule):  # type: ignore
     def __init__(
         self,
         train_conf: DictConfig,
@@ -244,31 +244,31 @@ class NetworkLightningModule(Network, pl.LightningModule):
         mse_loss = F.mse_loss(pred_val.squeeze(), target_val)
         return mse_loss, cross_entropy_loss, mse_loss + cross_entropy_loss
 
-    def training_step(self, batch: DataPoint, batch_idx: int) -> pl.TrainResult:
+    def training_step(  # type: ignore
+        self, batch: DataPoint, batch_idx: int
+    ) -> torch.Tensor:
         planes, target_move, target_val = batch
         pred_move, pred_val = self(planes)
         mse_loss, cross_entropy_loss, loss = self.loss(
             pred_move, pred_val, target_move, target_val
         )
-        result = pl.TrainResult(minimize=loss)
-        result.log("train_loss", loss, prog_bar=True)
-        result.log_dict(
+        self.log("train_loss", loss, prog_bar=True)
+        self.log_dict(
             {
                 "train_mse_loss": mse_loss,
                 "train_ce_loss": cross_entropy_loss,
                 "train_acc": accuracy(pred_move, target_move),
             }
         )
-        return result
+        return loss
 
-    def validation_step(self, batch: DataPoint, batch_idx: int) -> pl.EvalResult:
+    def validation_step(self, batch: DataPoint, batch_idx: int) -> None:  # type: ignore
         planes, target_move, target_val = batch
         pred_move, pred_val = self(planes)
         mse_loss, cross_entropy_loss, loss = self.loss(
             pred_move, pred_val, target_move, target_val
         )
-        result = pl.EvalResult(checkpoint_on=loss)
-        result.log_dict(
+        self.log_dict(
             {
                 "val_loss": loss,
                 "val_mse_loss": mse_loss,
@@ -276,19 +276,21 @@ class NetworkLightningModule(Network, pl.LightningModule):
                 "val_acc": accuracy(pred_move, target_move),
             }
         )
-        return result
 
-    def test_step(self, batch: DataPoint, batch_idx: int) -> pl.EvalResult:
-        result = self.validation_step(batch, batch_idx)
-        result.rename_keys(
+    def test_step(self, batch: DataPoint, batch_idx: int) -> None:  # type: ignore
+        planes, target_move, target_val = batch
+        pred_move, pred_val = self(planes)
+        mse_loss, cross_entropy_loss, loss = self.loss(
+            pred_move, pred_val, target_move, target_val
+        )
+        self.log_dict(
             {
-                "val_loss": "test_loss",
-                "val_mse_loss": "test_mse_loss",
-                "val_ce_loss": "test_ce_loss",
-                "val_acc": "test_acc",
+                "test_loss": loss,
+                "test_mse_loss": mse_loss,
+                "test_ce_loss": cross_entropy_loss,
+                "test_acc": accuracy(pred_move, target_move),
             }
         )
-        return result
 
     def configure_optimizers(self):
         # taken from leela zero
@@ -300,12 +302,10 @@ class NetworkLightningModule(Network, pl.LightningModule):
             nesterov=True,
             weight_decay=1e-4,
         )
-        lr_sched = {
-            "scheduler": torch.optim.lr_scheduler.ReduceLROnPlateau(
+        return {
+            "optimizer": sgd_opt,
+            "lr_scheduler": torch.optim.lr_scheduler.ReduceLROnPlateau(
                 sgd_opt, verbose=True, min_lr=5e-6
             ),
-            "reduce_on_plateau": True,
-            # val_checkpoint_on is val_loss passed in as checkpoint_on
-            "monitor": "val_checkpoint_on",
+            "monitor": "val_loss",
         }
-        return [sgd_opt], [lr_sched]
